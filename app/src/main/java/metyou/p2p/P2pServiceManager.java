@@ -12,6 +12,7 @@ import android.widget.Toast;
 import java.util.HashMap;
 import java.util.Map;
 
+import acs.metyou.R;
 import metyou.MetYou;
 
 /**
@@ -23,8 +24,6 @@ public class P2pServiceManager {
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
     private P2pContactsReceiver receiver;
-    private static String instanceName = "metyou";
-    private static String serviceType = "_presence._tcp";
     private WifiP2pDnsSdServiceRequest serviceRequest;
     WifiP2pManager.DnsSdServiceResponseListener servListener;
     private WifiP2pManager.DnsSdTxtRecordListener txtListener;
@@ -44,6 +43,9 @@ public class P2pServiceManager {
     }
 
     public void initServiceRequest() {
+        final String instanceName = activity.getString(R.string.instanceName);
+        String serviceType = activity.getString(R.string.serviceType);
+
         txtListener = new WifiP2pManager.DnsSdTxtRecordListener() {
             @Override
             public void onDnsSdTxtRecordAvailable(
@@ -88,7 +90,7 @@ public class P2pServiceManager {
         record.put("buddyname", "Mihai");
 
         WifiP2pDnsSdServiceInfo serviceInfo =
-                WifiP2pDnsSdServiceInfo.newInstance("MetYou", serviceType, record);
+                WifiP2pDnsSdServiceInfo.newInstance("MetYou", activity.getString(R.string.serviceType), record);
 
         mManager.addLocalService(mChannel, serviceInfo, new WifiP2pManager.ActionListener() {
             @Override

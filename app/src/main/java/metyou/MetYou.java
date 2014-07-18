@@ -66,7 +66,6 @@ public class MetYou extends Activity {
     public void onResume() {
         super.onResume();
         mP2pServiceManager.registerService();
-        mP2pServiceManager.discoverPeers();
         mP2pServiceManager.discoverServices();
     }
 

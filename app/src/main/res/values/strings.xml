@@ -4,5 +4,7 @@
     <string name="app_name">ContactSharing</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="serviceType">_presence._tcp</string>
+    <string name="instanceName">metyou</string>
 
 </resources>
