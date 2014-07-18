@@ -1,4 +1,4 @@
-package acs.metyou;
+package metyou.p2p;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,34 +13,25 @@ import android.widget.ListView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ContactsReceiver extends BroadcastReceiver {
+import acs.metyou.R;
+import metyou.MetYou;
+
+public class P2pContactsReceiver extends BroadcastReceiver {
     private final WifiP2pManager mManager;
     private final Channel mChannel;
     private MetYou activity;
     private PeerListListener peerListListener;
-    private List<String> peerList;
     private ListView listView;
     private ArrayAdapter<String> arrayAdapter;
 
-    public ContactsReceiver(WifiP2pManager manager, Channel channel, MetYou activity) {
+    public P2pContactsReceiver(WifiP2pManager manager, Channel channel, MetYou activity) {
         super();
         this.mManager = manager;
         this.activity = activity;
         this.mChannel = channel;
-        peerList = new ArrayList();
-        listView = (ListView) activity.findViewById(R.id.peer_list);
-        arrayAdapter = new ArrayAdapter<String>(activity, android.R.layout.simple_list_item_1, peerList);
-        listView.setAdapter(arrayAdapter);
-
         peerListListener = new PeerListListener() {
             @Override
             public void onPeersAvailable(WifiP2pDeviceList peers) {
-
-                peerList.clear();
-                for (WifiP2pDevice dev:peers.getDeviceList()) {
-                    peerList.add(dev.deviceAddress);
-                }
-                arrayAdapter.notifyDataSetChanged();
             }
         };
     }
