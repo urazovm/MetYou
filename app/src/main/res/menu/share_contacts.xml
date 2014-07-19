@@ -5,7 +5,11 @@
         android:title="@string/action_settings"
         android:orderInCategory="100"
         android:showAsAction="never" />
-    <item android:id="@+id/refresh"
-        android:title="Refresh"
+    <item android:id="@+id/refresh_p2p"
+        android:title="Refresh P2p"
+        />
+
+    <item android:id="@+id/refresh_net"
+        android:title="Refresh Net"
         />
 </menu>

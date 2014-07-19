@@ -43,8 +43,8 @@ public class P2pServiceManager {
     }
 
     public void initServiceRequest() {
-        final String instanceName = activity.getString(R.string.instanceName);
-        String serviceType = activity.getString(R.string.serviceType);
+        final String instanceName = activity.getString(R.string.instance_name);
+        String serviceType = activity.getString(R.string.service_type);
 
         txtListener = new WifiP2pManager.DnsSdTxtRecordListener() {
             @Override
@@ -54,7 +54,6 @@ public class P2pServiceManager {
                 if (!instanceName.equals(localInstanceName))
                     return;
                 activity.addBuddy(record.get("buddyname"));
-                activity.updateList();
                 Log.d("onRecord", "fullDomain: " + fullDomain + " record: " + record.toString());
                 Toast.makeText(activity, record.get("buddyname"), Toast.LENGTH_LONG).show();
             }
@@ -90,7 +89,7 @@ public class P2pServiceManager {
         record.put("buddyname", "Mihai");
 
         WifiP2pDnsSdServiceInfo serviceInfo =
-                WifiP2pDnsSdServiceInfo.newInstance("MetYou", activity.getString(R.string.serviceType), record);
+                WifiP2pDnsSdServiceInfo.newInstance("MetYou", activity.getString(R.string.service_type), record);
 
         mManager.addLocalService(mChannel, serviceInfo, new WifiP2pManager.ActionListener() {
             @Override

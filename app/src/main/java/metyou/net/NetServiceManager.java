@@ -4,7 +4,13 @@ import android.content.Context;
 import android.net.nsd.NsdManager.RegistrationListener;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
+
+import java.net.InetAddress;
 
 import acs.metyou.R;
 import metyou.MetYou;
@@ -19,19 +25,37 @@ public class NetServiceManager {
     private String serviceType;
     private NsdManager mNsdManager;
     private NsdManager.DiscoveryListener mDiscoveryListener;
+    private NsdManager.ResolveListener mResolveListener;
+    private NsdServiceInfo service;
+    private Handler uiHandler;
 
     public NetServiceManager(MetYou activity) {
         this.activity = activity;
-        serviceName = activity.getString(R.string.instanceName);
-        serviceType = activity.getString(R.string.serviceType);
+        serviceName = activity.getString(R.string.instance_name);
+        serviceType = activity.getString(R.string.service_type);
+        mNsdManager = (NsdManager) activity.getSystemService(Context.NSD_SERVICE);
 
+        initializeRegistrationListener();
+        initializeDiscoveryListener();
+        initializeResolveListener();
+        initializeUiHandler();
+    }
+
+    public void initializeUiHandler() {
+        uiHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
+            @Override
+            public boolean handleMessage(Message msg) {
+                activity.addBuddy((String)msg.obj);
+                return true;
+            }
+        });
     }
 
     public void registerService(int port) {
         NsdServiceInfo serviceInfo = new NsdServiceInfo();
         serviceInfo.setServiceName(serviceName);
         serviceInfo.setServiceType(serviceType);
-        mNsdManager = (NsdManager) activity.getSystemService(Context.NSD_SERVICE);
+        serviceInfo.setPort(port);
         mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, mRegistrationListener);
     }
 
@@ -41,6 +65,7 @@ public class NetServiceManager {
             @Override
             public void onServiceRegistered(NsdServiceInfo NsdServiceInfo) {
                 serviceName = NsdServiceInfo.getServiceName();
+                Log.d("Local Net Service", "registration succeded");
             }
 
             @Override
@@ -73,13 +98,13 @@ public class NetServiceManager {
 
             @Override
             public void onServiceFound(NsdServiceInfo service) {
-                Log.d("Net Service Discovery", "Service discovery success" + service);
+                Log.d("Net Service Discovery", "Service discovery success " + service);
                 if (!service.getServiceType().equals(serviceType)) {
                     Log.d("Net Service Discovery", "Unknown Service Type: " + service.getServiceType());
                 } else if (service.getServiceName().equals(serviceName)) {
                     Log.d("Net Service Discovery", "Same machine: " + serviceName);
                 } else if (service.getServiceName().contains(serviceName)){
-                    //mNsdManager.resolveService(service, mResolveListener);
+                    mNsdManager.resolveService(service, mResolveListener);
                 }
             }
 
@@ -112,5 +137,37 @@ public class NetServiceManager {
     public void discoverServices() {
         mNsdManager.discoverServices(
                 serviceType, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
+    }
+
+    public void initializeResolveListener() {
+        mResolveListener = new NsdManager.ResolveListener() {
+
+            @Override
+            public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
+                // Called when the resolve fails.  Use the error code to debug.
+                Log.e("Net Service Discovery", "Resolve failed" + errorCode);
+            }
+
+            @Override
+            public void onServiceResolved(NsdServiceInfo mServiceInfo) {
+                Log.e("Net Service Discovery", "Resolve Succeeded. " + mServiceInfo);
+
+                if (mServiceInfo.getServiceName().equals(serviceName)) {
+                    Log.d("Net Service Discovery", "Same IP.");
+                    return;
+                }
+
+                Message serviceResolvedMessage = uiHandler.obtainMessage(0, mServiceInfo.getServiceName());
+                serviceResolvedMessage.sendToTarget();
+                service = mServiceInfo;
+                int port = service.getPort();
+                InetAddress host = service.getHost();
+            }
+        };
+    }
+
+    public void tearDown() {
+        //mNsdManager.unregisterService(mRegistrationListener);
+        mNsdManager.stopServiceDiscovery(mDiscoveryListener);
     }
 }
