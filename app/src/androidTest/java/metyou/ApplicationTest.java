@@ -1,4 +1,4 @@
-package acs.metyou;
+package metyou;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

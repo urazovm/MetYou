@@ -1,10 +1,8 @@
-package metyou.net;
+package com.metyou.net;
 
-import android.text.Selection;
 import android.util.Log;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;

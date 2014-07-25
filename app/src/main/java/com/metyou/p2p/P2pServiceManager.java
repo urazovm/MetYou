@@ -1,5 +1,6 @@
-package metyou.p2p;
+package com.metyou.p2p;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -12,15 +13,14 @@ import android.widget.Toast;
 import java.util.HashMap;
 import java.util.Map;
 
-import acs.metyou.R;
-import metyou.MetYou;
+import com.metyou.R;
 
 /**
  * Created by mihai on 7/18/14.
  */
 public class P2pServiceManager {
     private final IntentFilter intentFilter = new IntentFilter();
-    private final MetYou activity;
+    private Activity activity;
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
     private P2pContactsReceiver receiver;
@@ -28,7 +28,7 @@ public class P2pServiceManager {
     WifiP2pManager.DnsSdServiceResponseListener servListener;
     private WifiP2pManager.DnsSdTxtRecordListener txtListener;
 
-    public P2pServiceManager(MetYou activity) {
+    public P2pServiceManager(Activity activity) {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
@@ -53,7 +53,7 @@ public class P2pServiceManager {
                 String localInstanceName = fullDomain.split("\\.")[0];
                 if (!instanceName.equals(localInstanceName))
                     return;
-                activity.addBuddy(record.get("buddyname"));
+                //activity.addBuddy(record.get("buddyname"));
                 Log.d("onRecord", "fullDomain: " + fullDomain + " record: " + record.toString());
                 Toast.makeText(activity, record.get("buddyname"), Toast.LENGTH_LONG).show();
             }

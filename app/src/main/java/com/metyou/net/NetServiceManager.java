@@ -1,5 +1,6 @@
-package metyou.net;
+package com.metyou.net;
 
+import android.app.Activity;
 import android.content.Context;
 import android.net.nsd.NsdManager.RegistrationListener;
 import android.net.nsd.NsdManager;
@@ -8,18 +9,18 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
-import android.widget.Toast;
+import android.widget.ArrayAdapter;
 
 import java.net.InetAddress;
 
-import acs.metyou.R;
-import metyou.MetYou;
+import com.metyou.R;
 
 /**
  * Created by mihai on 7/19/14.
  */
 public class NetServiceManager {
-    private MetYou activity;
+    private ArrayAdapter<String> mAdapter;
+    private Activity activity;
     private RegistrationListener mRegistrationListener;
     private String serviceName;
     private String serviceType;
@@ -29,8 +30,9 @@ public class NetServiceManager {
     private NsdServiceInfo service;
     private Handler uiHandler;
 
-    public NetServiceManager(MetYou activity) {
+    public NetServiceManager(Activity activity, ArrayAdapter<String> mAdapter) {
         this.activity = activity;
+        this.mAdapter = mAdapter;
         serviceName = activity.getString(R.string.instance_name);
         serviceType = activity.getString(R.string.service_type);
         mNsdManager = (NsdManager) activity.getSystemService(Context.NSD_SERVICE);
@@ -45,7 +47,8 @@ public class NetServiceManager {
         uiHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
             @Override
             public boolean handleMessage(Message msg) {
-                activity.addBuddy((String)msg.obj);
+                mAdapter.add((String)msg.obj);
+                mAdapter.notifyDataSetChanged();
                 return true;
             }
         });

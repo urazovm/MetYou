@@ -2,8 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/HelloFacebookSample/HelloFacebookSample.iml" filepath="$PROJECT_DIR$/HelloFacebookSample/HelloFacebookSample.iml" />
       <module fileurl="file://$PROJECT_DIR$/MetYou.iml" filepath="$PROJECT_DIR$/MetYou.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Scrumptious/Scrumptious.iml" filepath="$PROJECT_DIR$/Scrumptious/Scrumptious.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/libs/facebook/facebook.iml" filepath="$PROJECT_DIR$/app/libs/facebook/facebook.iml" />
     </modules>
   </component>
 </project>
