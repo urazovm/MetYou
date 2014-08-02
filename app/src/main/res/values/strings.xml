@@ -12,5 +12,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="facebook_app_id">268968299975258</string>
+    <string name="refresh">Refresh</string>
+    <string name="title_activity_login">LoginActivity</string>
 
 </resources>

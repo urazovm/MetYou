@@ -1,7 +1,13 @@
 package com.metyou.net;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.nsd.NsdManager.RegistrationListener;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
@@ -9,18 +15,17 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
-import android.widget.ArrayAdapter;
 
 import java.net.InetAddress;
 
+import com.metyou.MainActivity;
 import com.metyou.R;
+import com.metyou.social.SocialProvider;
 
-/**
- * Created by mihai on 7/19/14.
- */
-public class NetServiceManager {
-    private ArrayAdapter<String> mAdapter;
-    private Activity activity;
+public class NetServiceManager extends BroadcastReceiver {
+    private static final String TAG = "NetServiceManager";
+    private static final long ALARM_INTERVAL = 1000 * 60 * 15;
+    private MainActivity activity;
     private RegistrationListener mRegistrationListener;
     private String serviceName;
     private String serviceType;
@@ -29,37 +34,83 @@ public class NetServiceManager {
     private NsdManager.ResolveListener mResolveListener;
     private NsdServiceInfo service;
     private Handler uiHandler;
+    private boolean discoveryStarted;
+    private boolean isRegistered;
 
-    public NetServiceManager(Activity activity, ArrayAdapter<String> mAdapter) {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        ConnectivityManager connectivityManager = (ConnectivityManager)
+                context.getSystemService(Context.CONNECTIVITY_SERVICE );
+
+        NetworkInfo activeNetInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        if (activeNetInfo == null)
+            return;
+
+        NetworkInfo.State state = activeNetInfo.getState();
+
+        if (activeNetInfo.isConnected()) {
+            Log.d("Connection", "Connected");
+            initializeService(context);
+            registerService(context, context.getResources().getInteger(R.integer.presence_port));
+            setServiceDiscoveryAlarm(context);
+        }  else if (activeNetInfo.isConnectedOrConnecting()) {
+            Log.d("Connection", "Connected or Connecting");
+        } else {
+            cancelServiceDiscoveryAlarm(context);
+            Log.d("Connection", "Not Connected");
+
+        }
+    }
+
+    public interface ServicesListener {
+        void onDiscoveredBuddy(String buddyId);
+    }
+
+    public NetServiceManager() {
+        // mandatory sample constructor for manifest
+    }
+
+    public NetServiceManager(MainActivity activity) {
         this.activity = activity;
-        this.mAdapter = mAdapter;
-        serviceName = activity.getString(R.string.instance_name);
-        serviceType = activity.getString(R.string.service_type);
         mNsdManager = (NsdManager) activity.getSystemService(Context.NSD_SERVICE);
+        discoveryStarted = false;
 
-        initializeRegistrationListener();
+        initializeService(activity);
         initializeDiscoveryListener();
         initializeResolveListener();
         initializeUiHandler();
+        registerService(activity, activity.getResources().getInteger(R.integer.presence_port));
+    }
+
+    private void initializeService(Context context) {
+        serviceName = context.getString(R.string.instance_name);
+        serviceType = context.getString(R.string.service_type);
     }
 
     public void initializeUiHandler() {
         uiHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
             @Override
             public boolean handleMessage(Message msg) {
-                mAdapter.add((String)msg.obj);
-                mAdapter.notifyDataSetChanged();
+//                activity.onDiscoveredBuddy(msg.obj.toString());
                 return true;
             }
         });
     }
 
-    public void registerService(int port) {
+    public void registerService(Context activity, int port) {
         NsdServiceInfo serviceInfo = new NsdServiceInfo();
-        serviceInfo.setServiceName(serviceName);
+        serviceInfo.setServiceName(serviceName + SocialProvider.getId());
         serviceInfo.setServiceType(serviceType);
         serviceInfo.setPort(port);
+        if (mNsdManager == null) {
+            mNsdManager = (NsdManager) activity.getSystemService(Context.NSD_SERVICE);
+        }
+        initializeRegistrationListener();
         mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, mRegistrationListener);
+    }
+
+    public void unregisterService() {
+        mNsdManager.unregisterService(mRegistrationListener);
     }
 
     public void initializeRegistrationListener() {
@@ -67,8 +118,9 @@ public class NetServiceManager {
 
             @Override
             public void onServiceRegistered(NsdServiceInfo NsdServiceInfo) {
-                serviceName = NsdServiceInfo.getServiceName();
+                //serviceName = NsdServiceInfo.getServiceName();
                 Log.d("Local Net Service", "registration succeded");
+                isRegistered = true;
             }
 
             @Override
@@ -97,6 +149,7 @@ public class NetServiceManager {
             @Override
             public void onDiscoveryStarted(String regType) {
                 Log.d("Net Service Discovery", "Service discovery started");
+                discoveryStarted = true;
             }
 
             @Override
@@ -104,10 +157,12 @@ public class NetServiceManager {
                 Log.d("Net Service Discovery", "Service discovery success " + service);
                 if (!service.getServiceType().equals(serviceType)) {
                     Log.d("Net Service Discovery", "Unknown Service Type: " + service.getServiceType());
-                } else if (service.getServiceName().equals(serviceName)) {
+                } else if (service.getServiceName().equals(serviceName + SocialProvider.getId())) {
                     Log.d("Net Service Discovery", "Same machine: " + serviceName);
                 } else if (service.getServiceName().contains(serviceName)){
-                    mNsdManager.resolveService(service, mResolveListener);
+                    //mNsdManager.resolveService(service, mResolveListener);
+                    Log.d(TAG, "discovered: " + service.getServiceName());
+
                 }
             }
 
@@ -121,17 +176,20 @@ public class NetServiceManager {
             @Override
             public void onDiscoveryStopped(String serviceType) {
                 Log.i("Net Service Discovery", "Discovery stopped: " + serviceType);
+                discoveryStarted = false;
             }
 
             @Override
             public void onStartDiscoveryFailed(String serviceType, int errorCode) {
                 Log.e("Net Service Discovery", "Discovery failed: Error code:" + errorCode);
+                discoveryStarted = false;
                 mNsdManager.stopServiceDiscovery(this);
             }
 
             @Override
             public void onStopDiscoveryFailed(String serviceType, int errorCode) {
                 Log.e("Net Service Discovery", "Discovery failed: Error code:" + errorCode);
+                discoveryStarted = false;
                 mNsdManager.stopServiceDiscovery(this);
             }
         };
@@ -155,22 +213,48 @@ public class NetServiceManager {
             public void onServiceResolved(NsdServiceInfo mServiceInfo) {
                 Log.e("Net Service Discovery", "Resolve Succeeded. " + mServiceInfo);
 
-                if (mServiceInfo.getServiceName().equals(serviceName)) {
+                if (mServiceInfo.getServiceName().equals(serviceName + SocialProvider.getId())) {
                     Log.d("Net Service Discovery", "Same IP.");
                     return;
                 }
 
-                Message serviceResolvedMessage = uiHandler.obtainMessage(0, mServiceInfo.getServiceName());
+                String localServiceName = mServiceInfo.getServiceName().substring(serviceName.length());
+                Message serviceResolvedMessage = uiHandler.obtainMessage(0, localServiceName);
+
                 serviceResolvedMessage.sendToTarget();
                 service = mServiceInfo;
-                int port = service.getPort();
-                InetAddress host = service.getHost();
             }
         };
     }
 
+    public boolean wifiConnected(Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager)
+                context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        if (activeNetInfo == null)
+            return false;
+        return activeNetInfo.isConnected();
+    }
+
     public void tearDown() {
-        //mNsdManager.unregisterService(mRegistrationListener);
-        mNsdManager.stopServiceDiscovery(mDiscoveryListener);
+        if (discoveryStarted) {
+            mNsdManager.stopServiceDiscovery(mDiscoveryListener);
+        }
+    }
+
+    public void setServiceDiscoveryAlarm(Context context) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), PendingIntent.FLAG_NO_CREATE);
+
+        if (alarmIntent != null) {
+            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 0, ALARM_INTERVAL, alarmIntent);
+        } else {
+            Log.d(TAG, "Alarm already set!");
+        }
+    }
+
+    public void cancelServiceDiscoveryAlarm(Context context) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        alarmManager.cancel(PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), 0));
     }
 }

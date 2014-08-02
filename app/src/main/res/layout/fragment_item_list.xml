@@ -3,9 +3,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!--<ListView
+    <ListView
         android:id="@+id/buddy_list"
+        android:layout_gravity="bottom"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" /> -->
+        android:paddingTop="48dp"
+        android:layout_height="match_parent"/>
+
 
 </LinearLayout>
