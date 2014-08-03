@@ -61,8 +61,8 @@ public abstract class SocialProvider {
         return id;
     }
 
-    public static void readPreferences(Activity activity) {
-        SharedPreferences preferences = activity.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
+    public static void readPreferences(Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
         id = preferences.getString(USER_ID, "-1");
         Log.d(TAG, "prefs " + preferences.getAll().toString());
     }

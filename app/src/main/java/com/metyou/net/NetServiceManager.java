@@ -24,7 +24,8 @@ import com.metyou.social.SocialProvider;
 
 public class NetServiceManager extends BroadcastReceiver {
     private static final String TAG = "NetServiceManager";
-    private static final long ALARM_INTERVAL = 1000 * 60 * 15;
+    private static final long ALARM_INTERVAL = 1000 * 60 * 15 * 2;
+    private static final long ALARM_DELAY = 0;
     private MainActivity activity;
     private RegistrationListener mRegistrationListener;
     private String serviceName;
@@ -50,16 +51,20 @@ public class NetServiceManager extends BroadcastReceiver {
 
         if (activeNetInfo.isConnected()) {
             Log.d("Connection", "Connected");
-            initializeService(context);
-            registerService(context, context.getResources().getInteger(R.integer.presence_port));
+            registerServiceInBackground(context);
             setServiceDiscoveryAlarm(context);
         }  else if (activeNetInfo.isConnectedOrConnecting()) {
             Log.d("Connection", "Connected or Connecting");
         } else {
             cancelServiceDiscoveryAlarm(context);
             Log.d("Connection", "Not Connected");
-
         }
+    }
+
+    private void registerServiceInBackground(Context context) {
+        Intent intent = new Intent(context, DiscoverService.class);
+        intent.putExtra(DiscoverService.ACTION, DiscoverService.REGISTER);
+        context.startService(intent);
     }
 
     public interface ServicesListener {
@@ -117,9 +122,9 @@ public class NetServiceManager extends BroadcastReceiver {
         mRegistrationListener = new NsdManager.RegistrationListener() {
 
             @Override
-            public void onServiceRegistered(NsdServiceInfo NsdServiceInfo) {
+            public void onServiceRegistered(NsdServiceInfo serviceInfo) {
                 //serviceName = NsdServiceInfo.getServiceName();
-                Log.d("Local Net Service", "registration succeded");
+                Log.d("Local Net Service", "registration succeded: " + serviceInfo.getServiceName());
                 isRegistered = true;
             }
 
@@ -246,8 +251,9 @@ public class NetServiceManager extends BroadcastReceiver {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), PendingIntent.FLAG_NO_CREATE);
 
-        if (alarmIntent != null) {
-            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 0, ALARM_INTERVAL, alarmIntent);
+        if (alarmIntent == null) {
+            alarmIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), 0);
+            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, ALARM_DELAY, ALARM_INTERVAL, alarmIntent);
         } else {
             Log.d(TAG, "Alarm already set!");
         }

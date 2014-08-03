@@ -12,6 +12,8 @@ public class AlarmReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d("AlarmReceiver", "triggered");
-        context.startService(new Intent(context, DiscoverService.class));
+        Intent newIntent = new Intent(context, DiscoverService.class);
+        newIntent.putExtra(DiscoverService.ACTION, DiscoverService.DISCOVER);
+        context.startService(newIntent);
     }
 }

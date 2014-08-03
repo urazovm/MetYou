@@ -1,7 +1,9 @@
 package com.metyou;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -9,11 +11,15 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.facebook.FacebookException;
 import com.facebook.Response;
 import com.facebook.Session;
 import com.facebook.SessionState;
 import com.facebook.UiLifecycleHelper;
+import com.facebook.android.Facebook;
 import com.facebook.model.GraphUser;
+import com.facebook.widget.FacebookDialog;
+import com.facebook.widget.LoginButton;
 import com.metyou.social.SocialProvider;
 
 public class LoginActivity extends Activity implements SocialProvider.SocialProviderListener {
@@ -23,6 +29,7 @@ public class LoginActivity extends Activity implements SocialProvider.SocialProv
     private static final String TAG = "LoginActivity";
     private static final String PREFERENCES_FILE = "PREFS";
     private UiLifecycleHelper uiLifecycleHelper;
+    private LoginButton loginButton;
     private int lastProvider;
     private Session.StatusCallback callback = new Session.StatusCallback() {
         @Override
@@ -37,6 +44,8 @@ public class LoginActivity extends Activity implements SocialProvider.SocialProv
             saveProvider(SocialProvider.FACEBOOK);
             SocialProvider.fetchUserInfo(this);
         } else {
+
+
             Log.d(TAG, "facebook closed");
             saveProvider(SocialProvider.NONE);
         }
@@ -52,6 +61,29 @@ public class LoginActivity extends Activity implements SocialProvider.SocialProv
             Log.d(TAG, "already signed in");
             startMainActivity();
         }
+
+        loginButton = (LoginButton) findViewById(R.id.facebook_auth_button);
+        loginButton.setOnErrorListener(new LoginButton.OnErrorListener() {
+            @Override
+            public void onError(FacebookException error) {
+                String errorMessage = error.getMessage();
+                if (errorMessage.equals("net::ERR_NAME_NOT_RESOLVED") ||
+                    errorMessage.equals("net::ERR_ADDRESS_UNREACHABLE")){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
+                    builder.setTitle("Login Failed");
+                    builder.setMessage("Please check your network connectivity or try again later!");
+                    builder.setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    });
+                    builder.create().show();
+                }
+                Log.d(TAG, error.getMessage());
+            }
+        });
+
         uiLifecycleHelper = new UiLifecycleHelper(this, callback);
         uiLifecycleHelper.onCreate(savedInstanceState);
     }
