@@ -5,11 +5,7 @@
         android:title="@string/action_settings"
         android:orderInCategory="100" />
 
-    <item android:id="@+id/refresh"
-        android:title="Refresh"
-        />
-
-    <item android:id="@+id/stop_refresh"
-        android:title="Stop"
+    <item android:id="@+id/get_resp"
+        android:title="Get Response"
         />
 </menu>

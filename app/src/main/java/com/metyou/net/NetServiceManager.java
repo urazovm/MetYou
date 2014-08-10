@@ -261,6 +261,11 @@ public class NetServiceManager extends BroadcastReceiver {
 
     public void cancelServiceDiscoveryAlarm(Context context) {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        alarmManager.cancel(PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), 0));
+        PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), PendingIntent.FLAG_NO_CREATE);
+        if (alarmIntent != null) {
+            alarmManager.cancel(alarmIntent);
+            alarmIntent.cancel();
+            Log.d(TAG, "Alarm canceled!");
+        }
     }
 }
