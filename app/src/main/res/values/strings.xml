@@ -15,4 +15,9 @@
     <string name="refresh">Refresh</string>
     <string name="title_activity_login">LoginActivity</string>
 
+    <!-- Preferences -->
+    <string name="settings_category">Settings</string>
+    <string name="log_out">Log out</string>
+    <string name="log_out_message">Log out now?</string>
+
 </resources>

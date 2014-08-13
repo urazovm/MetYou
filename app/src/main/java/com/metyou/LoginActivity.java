@@ -1,5 +1,6 @@
 package com.metyou;
 
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -10,6 +11,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.facebook.FacebookException;
 import com.facebook.Response;
@@ -20,17 +22,28 @@ import com.facebook.android.Facebook;
 import com.facebook.model.GraphUser;
 import com.facebook.widget.FacebookDialog;
 import com.facebook.widget.LoginButton;
+import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.metyou.cloud.services.model.CloudResponse;
+import com.metyou.cloud.services.model.SocialIdentity;
+import com.metyou.cloudapi.CloudApi;
+import com.metyou.cloudapi.RegisterTask;
 import com.metyou.social.SocialProvider;
 
-public class LoginActivity extends Activity implements SocialProvider.SocialProviderListener {
+import org.json.JSONArray;
+
+public class LoginActivity extends Activity implements
+        SocialProvider.SocialProviderListener,
+        RegisterTask.RegisterTaskCallback {
 
     private static final String KEY_LAST_PROVIDER = "LAST_PROVIDER";
     public static final String USER_ID = "USER_ID";
     private static final String TAG = "LoginActivity";
     private static final String PREFERENCES_FILE = "PREFS";
+    public static final String LOG_OUT_ACTION = "LOG_OUT";
     private UiLifecycleHelper uiLifecycleHelper;
     private LoginButton loginButton;
-    private int lastProvider;
+    private String lastProvider;
     private Session.StatusCallback callback = new Session.StatusCallback() {
         @Override
         public void call(Session session, SessionState state, Exception exception) {
@@ -44,11 +57,22 @@ public class LoginActivity extends Activity implements SocialProvider.SocialProv
             saveProvider(SocialProvider.FACEBOOK);
             SocialProvider.fetchUserInfo(this);
         } else {
-
-
             Log.d(TAG, "facebook closed");
             saveProvider(SocialProvider.NONE);
         }
+    }
+
+    private void registerUser() {
+        SocialIdentity socialIdentity = SocialProvider.getSocialIdentity();
+
+        GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(
+                LoginActivity.this, CloudApi.AUDIENCE);
+
+        //String accountName = AccountManager.get(this).getAccounts()[0].name;
+        Log.d(TAG, socialIdentity.getEmail());
+        credential.setSelectedAccountName(socialIdentity.getEmail());
+        CloudApi cloudApi = CloudApi.getCloudApi(credential);
+        cloudApi.registerUser(socialIdentity, this);
     }
 
 
@@ -57,9 +81,13 @@ public class LoginActivity extends Activity implements SocialProvider.SocialProv
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login_activity);
         if (SocialProvider.currentProvider() != SocialProvider.NONE) {
-            //already signed in; start main activity
-            Log.d(TAG, "already signed in");
-            startMainActivity();
+            if (getIntent().getAction().equals(LOG_OUT_ACTION)) {
+                logOut();
+            } else {
+                //already signed in; start main activity
+                Log.d(TAG, "already signed in");
+                startMainActivity();
+            }
         }
 
         loginButton = (LoginButton) findViewById(R.id.facebook_auth_button);
@@ -84,8 +112,18 @@ public class LoginActivity extends Activity implements SocialProvider.SocialProv
             }
         });
 
+        setFacebookPermissions();
         uiLifecycleHelper = new UiLifecycleHelper(this, callback);
         uiLifecycleHelper.onCreate(savedInstanceState);
+    }
+
+    private void logOut() {
+        Session.getActiveSession().closeAndClearTokenInformation();
+    }
+
+    private void setFacebookPermissions() {
+        LoginButton fbLoginButton = (LoginButton) findViewById(R.id.facebook_auth_button);
+        fbLoginButton.setReadPermissions("email");
     }
 
 
@@ -144,18 +182,18 @@ public class LoginActivity extends Activity implements SocialProvider.SocialProv
      * @param provider the provider (see {@link SocialProvider})
      */
 
-    public void saveProvider(int provider) {
+    public void saveProvider(String provider) {
         SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
-        editor.putInt(KEY_LAST_PROVIDER, provider);
+        editor.putString(KEY_LAST_PROVIDER, provider);
         editor.commit();
     }
 
     public void getProvider() {
         SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
-        lastProvider = sharedPreferences.getInt(KEY_LAST_PROVIDER, SocialProvider.NONE);
+        lastProvider = sharedPreferences.getString(KEY_LAST_PROVIDER, SocialProvider.NONE);
     }
 
-    public void startMainActivity() {
+    private void startMainActivity() {
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
         finish();
@@ -163,9 +201,25 @@ public class LoginActivity extends Activity implements SocialProvider.SocialProv
 
     @Override
     public void onUserInfoRequestCompleted(GraphUser user, Response response) {
-        SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE).edit();
-        preferences.putString(USER_ID, user.getId());
-        preferences.commit();
-        startMainActivity();
+        registerUser();
+    }
+
+    @Override
+    public Activity getActivity() {
+        return this;
+    }
+
+    @Override
+    public void onUserRegistered(CloudResponse response) {
+        //store user id
+        if (response == null) {
+            Toast.makeText(this, "An error occured", Toast.LENGTH_LONG).show();
+            logOut();
+        } else {
+            SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+            editor.putString(USER_ID, response.getId());
+            editor.commit();
+            startMainActivity();
+        }
     }
 }

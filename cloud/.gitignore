@@ -1,0 +1,3 @@
+# Created by .gitignore support plugin (hsz.mobi)
+/exported-libs
+src/main/java/com/metyou/cloud/Constants.java

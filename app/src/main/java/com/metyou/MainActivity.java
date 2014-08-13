@@ -3,6 +3,7 @@ package com.metyou;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.ActionBar;
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.os.AsyncTask;
@@ -12,24 +13,22 @@ import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.astuetz.PagerSlidingTabStrip;
+import com.facebook.widget.LoginButton;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 
-
-import com.metyou.cloud.services.model.Response;
 import com.metyou.cloudapi.CloudApi;
 import com.metyou.net.NetServiceManager;
 import com.metyou.social.SocialProvider;
-import com.metyou.cloud.services.Services;
+
 
 
 import java.io.IOException;
 
 
-public class MainActivity extends FragmentActivity /*,
+public class MainActivity extends Activity /*,
         GooglePlayServicesClient.ConnectionCallbacks,
         GooglePlayServicesClient.OnConnectionFailedListener,
         LocationListener */{
@@ -137,8 +136,9 @@ public class MainActivity extends FragmentActivity /*,
         netServiceManager.setServiceDiscoveryAlarm(this);
     }
 
+
     private void setActionBarTabs() {
-        appPagerAdapter = new AppPagerAdapter(getSupportFragmentManager());
+        appPagerAdapter = new AppPagerAdapter(getFragmentManager());
         viewPager = (ViewPager)findViewById(R.id.pager);
         viewPager.setAdapter(appPagerAdapter);
         slidingTabs = (PagerSlidingTabStrip) findViewById(R.id.tabs);
@@ -200,45 +200,8 @@ public class MainActivity extends FragmentActivity /*,
         if (id == R.id.action_settings) {
             return true;
         } else if (id == R.id.get_resp) {
-            getResponse();
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    public void getResponse() {
-        final AsyncTask<Void, Void, String> getResponse = new AsyncTask<Void, Void, String>() {
-            @Override
-            protected String doInBackground(Void... params) {
-                GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(
-                        MainActivity.this, CloudApi.AUDIENCE);
-                AccountManager am = AccountManager.get(MainActivity.this);
-                for (Account account: am.getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE)) {
-                    Log.d(TAG, account.name + " " + account.type);
-                }
-                credential.setSelectedAccountName(am.getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE)[0].name);
-
-                Services services = CloudApi.getApiServiceHandle(null);
-                try {
-
-                    Services.ServicesOperations.Register registerCommand = services.services().register();
-                    Response resp = registerCommand.execute();
-                    return resp.getId();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(String s) {
-                if (s != null) {
-                    Log.d(TAG, "Response:" + s);
-                } else {
-                    Log.d(TAG, "Response: none");
-                }
-            }
-        };
-        getResponse.execute((Void)null);
     }
 }

@@ -47,8 +47,6 @@ public class NetServiceManager extends BroadcastReceiver {
         if (activeNetInfo == null)
             return;
 
-        NetworkInfo.State state = activeNetInfo.getState();
-
         if (activeNetInfo.isConnected()) {
             Log.d("Connection", "Connected");
             registerServiceInBackground(context);
@@ -77,7 +75,6 @@ public class NetServiceManager extends BroadcastReceiver {
 
     public NetServiceManager(MainActivity activity) {
         this.activity = activity;
-        mNsdManager = (NsdManager) activity.getSystemService(Context.NSD_SERVICE);
         discoveryStarted = false;
 
         initializeService(activity);
@@ -254,6 +251,7 @@ public class NetServiceManager extends BroadcastReceiver {
         if (alarmIntent == null) {
             alarmIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), 0);
             alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, ALARM_DELAY, ALARM_INTERVAL, alarmIntent);
+            Log.d(TAG, "Alarm set!");
         } else {
             Log.d(TAG, "Alarm already set!");
         }
