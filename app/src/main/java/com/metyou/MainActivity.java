@@ -1,31 +1,19 @@
 package com.metyou;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.astuetz.PagerSlidingTabStrip;
-import com.facebook.widget.LoginButton;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 
-import com.metyou.cloudapi.CloudApi;
 import com.metyou.net.NetServiceManager;
 import com.metyou.social.SocialProvider;
-
-
-
-import java.io.IOException;
 
 
 public class MainActivity extends Activity /*,
@@ -129,7 +117,7 @@ public class MainActivity extends Activity /*,
         setContentView(R.layout.main_activity);
         SocialProvider.readPreferences(this);
         if (SocialProvider.currentProvider() != SocialProvider.NONE) {
-            Log.d(TAG, "Already signed in! User Id: " + SocialProvider.getId());
+            Log.d(TAG, "Already signed in! User Id: " + SocialProvider.getId(this));
         }
         setActionBarTabs();
         netServiceManager = new NetServiceManager(this);

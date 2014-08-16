@@ -1,6 +1,5 @@
 package com.metyou.net;
 
-import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -15,8 +14,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
-
-import java.net.InetAddress;
 
 import com.metyou.MainActivity;
 import com.metyou.R;
@@ -78,9 +75,9 @@ public class NetServiceManager extends BroadcastReceiver {
         discoveryStarted = false;
 
         initializeService(activity);
-        initializeDiscoveryListener();
-        initializeResolveListener();
-        initializeUiHandler();
+        //initializeDiscoveryListener();
+        //initializeResolveListener();
+        //initializeUiHandler();
         registerService(activity, activity.getResources().getInteger(R.integer.presence_port));
     }
 
@@ -101,7 +98,7 @@ public class NetServiceManager extends BroadcastReceiver {
 
     public void registerService(Context activity, int port) {
         NsdServiceInfo serviceInfo = new NsdServiceInfo();
-        serviceInfo.setServiceName(serviceName + SocialProvider.getId());
+        serviceInfo.setServiceName(serviceName + SocialProvider.getId(activity));
         serviceInfo.setServiceType(serviceType);
         serviceInfo.setPort(port);
         if (mNsdManager == null) {
@@ -142,7 +139,7 @@ public class NetServiceManager extends BroadcastReceiver {
         };
     }
 
-    public void initializeDiscoveryListener() {
+    /*public void initializeDiscoveryListener() {
 
         // Instantiate a new DiscoveryListener
         mDiscoveryListener = new NsdManager.DiscoveryListener() {
@@ -195,14 +192,14 @@ public class NetServiceManager extends BroadcastReceiver {
                 mNsdManager.stopServiceDiscovery(this);
             }
         };
-    }
+    }*/
 
-    public void discoverServices() {
+    /*public void discoverServices() {
         mNsdManager.discoverServices(
                 serviceType, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
-    }
+    }*/
 
-    public void initializeResolveListener() {
+    /*public void initializeResolveListener() {
         mResolveListener = new NsdManager.ResolveListener() {
 
             @Override
@@ -227,7 +224,7 @@ public class NetServiceManager extends BroadcastReceiver {
                 service = mServiceInfo;
             }
         };
-    }
+    }*/
 
     public boolean wifiConnected(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager)

@@ -9,6 +9,7 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.metyou.cloud.services.Services;
 import com.metyou.cloud.services.model.SocialIdentity;
+import com.metyou.cloud.services.model.UsersBatch;
 
 /**
  * Created by mihai on 8/7/14.
@@ -41,6 +42,11 @@ public class CloudApi {
     public void registerUser(SocialIdentity socialIdentity, RegisterTask.RegisterTaskCallback callback) {
         RegisterTask registerTask = new RegisterTask(services, socialIdentity, callback);
         registerTask.execute();
+    }
+
+    public void insertEncounteredUsers(UsersBatch users, StoreNetUsers.StoreUsersCallback callback) {
+        StoreNetUsers storeTask = new StoreNetUsers(services, users, callback);
+        storeTask.execute();
     }
 
 }

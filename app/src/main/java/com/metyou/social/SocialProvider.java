@@ -3,9 +3,10 @@ package com.metyou.social;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.facebook.FacebookRequestError;
 import com.facebook.Request;
 import com.facebook.Response;
 import com.facebook.Session;
@@ -21,11 +22,31 @@ public abstract class SocialProvider {
 
     private static final String TAG = "SocialProvider";
     public static final String FB_USER_ID = "FB_USER_ID";
+    public static final String USER_ID = "USER_ID";
     private static final String PREFERENCES_FILE = "PREFS";
     private static final String FB_EMAIL = "FB_EMAIL";
 
-    private static String id;
+    private static String facebookId;
     private static String email;
+    private static String id;
+
+    public static String getId(Context context) {
+        if (id == null) {
+            SharedPreferences preferences = context.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
+            id = preferences.getString(USER_ID, "-1");
+        }
+        return id;
+    }
+
+    public static void deletePreferences(Context context) {
+        SharedPreferences.Editor preferences = context.getSharedPreferences(
+                PREFERENCES_FILE,
+                Context.MODE_PRIVATE).edit();
+        preferences.remove(FB_USER_ID);
+        preferences.remove(USER_ID);
+        preferences.remove(FB_EMAIL);
+        preferences.commit();
+    }
 
     public interface SocialProviderListener {
         public void onUserInfoRequestCompleted(GraphUser user, Response response);
@@ -52,8 +73,13 @@ public abstract class SocialProvider {
             Request request = Request.newMeRequest(Session.getActiveSession(), new Request.GraphUserCallback() {
                 @Override
                 public void onCompleted(GraphUser user, Response response) {
-                    storeUserInfo(user, response, listener);
-                    listener.onUserInfoRequestCompleted(user, response);
+                    if (response.getError() == null) {
+                        storeUserInfo(user, response, listener);
+                        listener.onUserInfoRequestCompleted(user, response);
+                    } else {
+                        FacebookRequestError error = response.getError();
+                        Toast.makeText(listener.getActivity(), error.getErrorMessage(), Toast.LENGTH_LONG).show();
+                    }
                 }
             });
             request.executeAsync();
@@ -70,24 +96,25 @@ public abstract class SocialProvider {
         preferences.putString(FB_USER_ID, user.getId());
         preferences.putString(FB_EMAIL, userEmail);
         preferences.commit();
-        id = user.getId();
         email = userEmail;
     }
 
 
-    public static String getId() {
-        return id;
+    public static String getFacebookId() {
+        return facebookId;
     }
 
     public static void readPreferences(Context context) {
         SharedPreferences preferences = context.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
-        id = preferences.getString(FB_USER_ID, "-1");
+        facebookId = preferences.getString(FB_USER_ID, "-1");
+        id = preferences.getString(USER_ID, "-1");
+        email = preferences.getString(FB_EMAIL, "-1");
         Log.d(TAG, "prefs " + preferences.getAll().toString());
     }
 
     public static SocialIdentity getSocialIdentity() {
         SocialIdentity socialIdentity = new SocialIdentity();
-        socialIdentity.setSocialId(id);
+        socialIdentity.setSocialId(facebookId);
         socialIdentity.setEmail(email);
         socialIdentity.setProvider(FACEBOOK);
         return socialIdentity;

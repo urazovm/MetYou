@@ -55,7 +55,25 @@
       <sourceFolder url="file://$MODULE_DIR$/../../../facebook/src/androidTest/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../../../facebook/src/androidTest/jni" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../../../facebook/src/androidTest/rs" isTestSource="true" />
-      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/assets" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/bundles" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/classes" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/coverage-instrumented-classes" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/dependency-cache" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/dex" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/dex-cache" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/incremental" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/jacoco" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/javaResources" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/libs" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/lint" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/manifests" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/ndk" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/pre-dexed" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/proguard" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/res" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/rs" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/intermediates/symbols" />
       <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/outputs" />
       <excludeFolder url="file://$MODULE_DIR$/../../../facebook/build/tmp" />
     </content>

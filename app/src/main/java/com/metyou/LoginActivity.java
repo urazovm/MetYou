@@ -1,5 +1,6 @@
 package com.metyou;
 
+import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -68,7 +69,6 @@ public class LoginActivity extends Activity implements
         GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(
                 LoginActivity.this, CloudApi.AUDIENCE);
 
-        //String accountName = AccountManager.get(this).getAccounts()[0].name;
         Log.d(TAG, socialIdentity.getEmail());
         credential.setSelectedAccountName(socialIdentity.getEmail());
         CloudApi cloudApi = CloudApi.getCloudApi(credential);
@@ -84,9 +84,14 @@ public class LoginActivity extends Activity implements
             if (getIntent().getAction().equals(LOG_OUT_ACTION)) {
                 logOut();
             } else {
-                //already signed in; start main activity
+                //already signed in; check id
                 Log.d(TAG, "already signed in");
-                startMainActivity();
+                String id = SocialProvider.getId(this);
+                if (id.equals("-1")) {
+                    logOut();
+                } else {
+                    startMainActivity();
+                }
             }
         }
 
@@ -119,6 +124,7 @@ public class LoginActivity extends Activity implements
 
     private void logOut() {
         Session.getActiveSession().closeAndClearTokenInformation();
+        SocialProvider.deletePreferences(this);
     }
 
     private void setFacebookPermissions() {
@@ -172,8 +178,19 @@ public class LoginActivity extends Activity implements
         int id = item.getItemId();
         if (id == R.id.action_settings) {
             return true;
+        } else if (id == R.id.list) {
+            listAccount();
+
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void listAccount() {
+        AccountManager am = AccountManager.get(this);
+        Account[] accounts = am.getAccounts();
+        for (Account account : accounts) {
+            Log.d(TAG, account.toString());
+        }
     }
 
     /**
@@ -201,7 +218,11 @@ public class LoginActivity extends Activity implements
 
     @Override
     public void onUserInfoRequestCompleted(GraphUser user, Response response) {
-        registerUser();
+        if (response.getError() != null) {
+            logOut();
+        } else {
+            registerUser();
+        }
     }
 
     @Override
@@ -216,7 +237,8 @@ public class LoginActivity extends Activity implements
             Toast.makeText(this, "An error occured", Toast.LENGTH_LONG).show();
             logOut();
         } else {
-            SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+            //store information
+            SharedPreferences.Editor editor = getSharedPreferences(PREFERENCES_FILE, MODE_PRIVATE).edit();
             editor.putString(USER_ID, response.getId());
             editor.commit();
             startMainActivity();
