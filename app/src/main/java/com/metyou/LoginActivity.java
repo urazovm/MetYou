@@ -14,9 +14,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.facebook.AccessToken;
+import com.facebook.AccessTokenSource;
 import com.facebook.FacebookException;
 import com.facebook.Response;
 import com.facebook.Session;
+import com.facebook.SessionLoginBehavior;
 import com.facebook.SessionState;
 import com.facebook.UiLifecycleHelper;
 import com.facebook.android.Facebook;
@@ -24,7 +27,9 @@ import com.facebook.model.GraphUser;
 import com.facebook.widget.FacebookDialog;
 import com.facebook.widget.LoginButton;
 import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.http.HttpRequest;
 import com.metyou.cloud.services.model.CloudResponse;
 import com.metyou.cloud.services.model.SocialIdentity;
 import com.metyou.cloudapi.CloudApi;
@@ -32,6 +37,9 @@ import com.metyou.cloudapi.RegisterTask;
 import com.metyou.social.SocialProvider;
 
 import org.json.JSONArray;
+
+import java.io.IOException;
+import java.util.Arrays;
 
 public class LoginActivity extends Activity implements
         SocialProvider.SocialProviderListener,
@@ -69,7 +77,9 @@ public class LoginActivity extends Activity implements
         GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(
                 LoginActivity.this, CloudApi.AUDIENCE);
 
-        Log.d(TAG, socialIdentity.getEmail());
+
+        Log.d(TAG, socialIdentity.getEmail());//todo set google account not facebook's
+        Log.d(TAG, Arrays.asList(AccountManager.get(this).getAccounts()).toString());
         credential.setSelectedAccountName(socialIdentity.getEmail());
         CloudApi cloudApi = CloudApi.getCloudApi(credential);
         cloudApi.registerUser(socialIdentity, this);
@@ -80,6 +90,7 @@ public class LoginActivity extends Activity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login_activity);
+
         if (SocialProvider.currentProvider() != SocialProvider.NONE) {
             if (getIntent().getAction().equals(LOG_OUT_ACTION)) {
                 logOut();
@@ -96,6 +107,7 @@ public class LoginActivity extends Activity implements
         }
 
         loginButton = (LoginButton) findViewById(R.id.facebook_auth_button);
+
         loginButton.setOnErrorListener(new LoginButton.OnErrorListener() {
             @Override
             public void onError(FacebookException error) {
@@ -124,6 +136,7 @@ public class LoginActivity extends Activity implements
 
     private void logOut() {
         Session.getActiveSession().closeAndClearTokenInformation();
+        Session.setActiveSession(null);
         SocialProvider.deletePreferences(this);
     }
 
@@ -239,7 +252,7 @@ public class LoginActivity extends Activity implements
         } else {
             //store information
             SharedPreferences.Editor editor = getSharedPreferences(PREFERENCES_FILE, MODE_PRIVATE).edit();
-            editor.putString(USER_ID, response.getId());
+            editor.putLong(USER_ID, response.getId());
             editor.commit();
             startMainActivity();
         }

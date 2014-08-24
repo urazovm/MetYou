@@ -9,7 +9,7 @@ import com.metyou.cloud.services.model.SocialIdentity;
 
 import java.io.IOException;
 
-public class RegisterTask extends AsyncTask<Void, Void, CloudResponse>{
+public class RegisterTask extends AsyncTask<Void, Void, CloudResponse> {
 
     private static final String TAG = "RegisterTask";
     private final RegisterTaskCallback callback;
@@ -41,7 +41,7 @@ public class RegisterTask extends AsyncTask<Void, Void, CloudResponse>{
     @Override
     protected void onPostExecute(CloudResponse response) {
         if (response != null) {
-            Log.d(TAG, response.getId());
+            Log.d(TAG, "id: " + response.getId());
         }
         callback.onUserRegistered(response);
     }

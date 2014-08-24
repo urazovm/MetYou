@@ -3,22 +3,27 @@ package com.metyou.cloud;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
-import com.google.api.server.spi.config.Named;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.PreparedQuery;
-import com.google.appengine.api.datastore.Query;
-import com.google.appengine.api.datastore.Transaction;
 import com.google.appengine.api.oauth.OAuthRequestException;
 import com.google.appengine.api.users.User;
+import com.googlecode.objectify.Key;
+import com.googlecode.objectify.VoidWork;
+import com.metyou.cloud.entity.AppUser;
+import com.metyou.cloud.entity.SocialIdentity;
+import com.metyou.cloud.entity.EncounterEvent;
+import com.metyou.cloud.pojos.UserEncountered;
+import com.metyou.cloud.pojos.UsersBatch;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
+
+import static com.metyou.cloud.OfyService.ofy;
 
 /**
  * Created by mihai on 8/7/14.
@@ -34,7 +39,39 @@ import java.util.List;
 
 public class MetYou {
 
-    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    static DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    static AppUser myKey;
+    Logger logger = Logger.getLogger("services");
+    static AppUser[] mockUsers;
+
+    static {
+        //check if users are stored
+        mockUsers = new AppUser[100];
+        SocialIdentity exists = ofy().load().type(SocialIdentity.class)
+                .filter("email", "yahim91@gmail.com").first().now();
+
+        if (exists == null) {
+            //register facebook user
+            Logger logger = Logger.getLogger("session");
+            logger.info("No users, setting up mock users");
+
+            myKey = registerMockUser("yahim91@gmail.com", "870448222985160", "mihai");
+            mockUsers[0] = registerMockUser("usclgsv_thurnsky_1408622681@tfbnw.net", "1539153762970955", "Nancy");
+            mockUsers[1] = registerMockUser("jmowgeq_valtchanovsen_1408622682@tfbnw.net", "262413737287320", "Lisa");
+            mockUsers[2] = registerMockUser("atnlvbo_sadanwitz_1408622681@tfbnw.net", "287039748164447", "Carol");
+            mockUsers[3] = registerMockUser("kvsptpa_vijayvergiyason_1408622680@tfbnw.net", "288998704620448", "James");
+            mockUsers[4] = registerMockUser("tvulafw_carrierosky_1408622668@tfbnw.net", "1496907407215719", "Dorothy");
+            mockUsers[5] = registerMockUser("icyizsy_letuchysen_1408622667@tfbnw.net", "338071993025644", "David");
+            mockUsers[6] = registerMockUser("pvhhyqp_fallerwitz_1408622667@tfbnw.net", "1473110812945394", "David");
+            mockUsers[7] = registerMockUser("inpfvuu_listein_1408622666@tfbnw.net", "306236796222135", "Jennifer");
+            mockUsers[8] = registerMockUser("eggixqd_zuckersen_1408622648@tfbnw.net", "311348959026195", "Sandra");
+            mockUsers[9] = registerMockUser("wulnaxg_narayananman_1408622649@tfbnw.net", "360916687394684", "Ruth");
+            mockUsers[10] = registerMockUser("uypblcj_schrockson_1408622647@tfbnw.net", "357899331025117", "Bob");
+            mockUsers[11] = registerMockUser("lhmaeex_sharpeman_1408622647@tfbnw.net", "269846306555394", "Carol");
+
+            setEncounteredUsers();
+        }
+    }
 
     @ApiMethod(
             name = "services.register",
@@ -43,78 +80,157 @@ public class MetYou {
         if (user == null) {
             return null;
         }
-        //check user existence
-        Query.Filter emailFilter = new Query.FilterPredicate(
-                "email",
-                Query.FilterOperator.EQUAL,
-                socialIdentity.getEmail());
-        Query.Filter providerFilter = new Query.FilterPredicate(
-                "socialProvider",
-                Query.FilterOperator.EQUAL,
-                socialIdentity.getProvider()
-        );
 
-        Query.Filter identityFilter = Query.CompositeFilterOperator.and(emailFilter, providerFilter);
-        Query query = new Query("SocialIdentity").setFilter(identityFilter);
-        PreparedQuery preparedQuery = datastore.prepare(query);
-        Entity identity = preparedQuery.asSingleEntity();
-        if (identity != null) {
-            //already stored in the datastore
-            CloudResponse response = new CloudResponse();
-            Key userKey = identity.getParent();
-            response.setId(KeyFactory.keyToString(userKey));
-            return response;
-        } else {
-            //must be stored in the datastore
-            Transaction tx = datastore.beginTransaction();
-            Entity newUser = new Entity("User");
-            datastore.put(newUser);
-            Entity newIdentity = new Entity("SocialIdentity", newUser.getKey());
-            newIdentity.setProperty("email", socialIdentity.getEmail());
-            newIdentity.setProperty("socialId", socialIdentity.getSocialId());
-            newIdentity.setProperty("socialProvider", socialIdentity.getProvider());
-            datastore.put(newIdentity);
-            tx.commit();
-            CloudResponse response = new CloudResponse();
-            response.setId(KeyFactory.keyToString(newUser.getKey()));
+        CloudResponse response = new CloudResponse();
+        SocialIdentity exists = ofy().load().type(SocialIdentity.class)
+                .filter("provider", socialIdentity.getProvider())
+                .filter("providerId", socialIdentity.getProviderId()).first().now();
+
+        if (exists != null) {
+            response.setId(exists.getUser().id);
             return response;
         }
+
+        logger.info("register provider " + socialIdentity.getProvider());
+        logger.info("register email " + socialIdentity.getEmail());
+
+        AppUser appUser = new AppUser();
+        ofy().save().entity(appUser).now();
+        socialIdentity.setUser(appUser);
+        ofy().save().entity(socialIdentity).now();
+
+        response.setId(appUser.id);
+        return response;
     }
 
     @ApiMethod(
             name = "services.insertEncounteredUsers",
             httpMethod = ApiMethod.HttpMethod.POST)
     public void insertUsersEncountered(UsersBatch users, User user) throws OAuthRequestException,
-            IOException{
+            IOException {
 
         if (user == null) {
             throw new OAuthRequestException("missing user");
         }
 
 
-        ArrayList<Entity> entities = new ArrayList<Entity>();
-        for (UserEncountered userEncountered : users.getUsers()) {
-            Entity userEntity = new Entity("UserEncountered", KeyFactory.stringToKey(users.getKey()));
-            userEntity.setProperty("time", userEncountered.getTimeEncountered());
-            userEntity.setProperty("userId", userEncountered.getUserId());
-            entities.add(userEntity);
-        }
-        datastore.put(entities);
+//        ArrayList<Entity> entities = new ArrayList<Entity>();
+//        for (UserEncountered userEncountered : users.getUsers()) {
+//            Entity userEntity = new Entity("UserEncountered", KeyFactory.stringToKey(users.getKey()));
+//            userEntity.setProperty("time", userEncountered.getTimeEncountered());
+//            userEntity.setProperty("userId", userEncountered.getUserId());
+//            entities.add(userEntity);
+//        }
+//        datastore.put(entities);
 
     }
 
-    public List<UserEncountered> getUsersEncountered(@Named("id") String id, User user) {
+    @ApiMethod(
+            name = "services.getUsers",
+            httpMethod = ApiMethod.HttpMethod.POST)
+    public UsersBatch getUsers(UsersRequest req, User user) throws OAuthRequestException,
+            IOException {
 
-        Query q = new Query("UserEncountered").setAncestor(KeyFactory.stringToKey(id));
-        List<UserEncountered> encountered = new ArrayList<UserEncountered>();
-        PreparedQuery pq = datastore.prepare(q);
-        for (Entity entity : pq.asIterable()) {
-            UserEncountered u = new UserEncountered();
-            u.setUserId((String)entity.getProperty("userId"));
-            u.setTimeEncountered((Date)entity.getProperty("time"));
-            encountered.add(u);
+        if (user == null) {
+            throw new OAuthRequestException("missing user");
         }
-        return encountered;
+
+        Logger logger = Logger.getLogger("services");
+        UsersBatch usersBatch = new UsersBatch();
+
+        Iterable<EncounterEvent> users = ofy().load()
+                .type(EncounterEvent.class)
+                .filter("users", Key.create(AppUser.class, req.getUserKey()));
+
+
+        List<UserEncountered> events = new ArrayList<UserEncountered>();
+        for (EncounterEvent encounterEvent : users) {
+
+            Long id = encounterEvent.getOtherUser(req.getUserKey());
+            String firstName = ofy().load().type(SocialIdentity.class)
+                    .filter("user", Key.create(AppUser.class, id))
+                    .first().now().getFirstName();
+
+            events.add(new UserEncountered(firstName));
+        }
+
+        logger.info("events " + events.size());
+
+        usersBatch.setUsers(events);
+        return usersBatch;
+
+//        UsersBatch usersBatch = new UsersBatch();
+//        usersBatch.setReachedEnd(true);
+//        ArrayList<UserEncountered> users = new ArrayList<UserEncountered>();
+//        Query query = new Query("UserEncountered")/*.setAncestor(KeyFactory.stringToKey(req.getUserKey()))*/;
+//        Query.Filter timeFilter = new Query.FilterPredicate(
+//                "time",
+//                Query.FilterOperator.LESS_THAN,
+//                req.getBeginningDate()
+//        );
+//        query.setFilter(timeFilter);
+//        PreparedQuery pq = datastore.prepare(query);
+//
+//        for (Entity entity : pq.asIterable()) {
+//            if (users.size() == req.getCount()) {
+//                usersBatch.setReachedEnd(false);
+//                break;
+//            }
+//            UserEncountered userEncountered = new UserEncountered();
+//            userEncountered.setUserId((String)entity.getProperty("userId"));
+//
+//            Entity userEntity = null;
+//
+//            String firstName = null;
+//            String socialId = null;
+//            try {
+//                userEntity = datastore.get(KeyFactory.stringToKey((String) entity.getProperty("userId")));
+//                firstName = String.valueOf(userEntity.getProperty("FirstName"));
+//            } catch (EntityNotFoundException e) {
+//                e.printStackTrace();
+//            }
+//
+//            Query socialQuery = new Query("SocialIdentity").setAncestor(userEntity.getKey());
+//            socialId = String.valueOf(datastore.prepare(socialQuery).asSingleEntity().getProperty("socialId"));
+//            userEncountered.setFirstName(firstName);
+//            userEncountered.setSocialId(socialId);
+//            users.add(userEncountered);
+//        }
+//        usersBatch.setUsers(users);
+//        return usersBatch;
     }
 
+
+    public List<AppUser> getRegisteredUsers() {
+        return ofy().load().type(AppUser.class).list();
+    }
+
+    static private AppUser registerMockUser(String email, String fbId, String name) {
+        AppUser appUser = new AppUser();
+        appUser.name = name;
+        ofy().save().entity(appUser).now();
+        SocialIdentity socialIdentity = new SocialIdentity(fbId, email, "facebook");
+        socialIdentity.setFirstName(name);
+        socialIdentity.setUser(appUser);
+        ofy().save().entity(socialIdentity).now();
+        return appUser;
+    }
+
+    static private void setEncounteredUsers() {
+        Calendar c = Calendar.getInstance();
+        c.set(2014, 7, 15);
+        final Date date = c.getTime();
+
+        for (int i = 0; i <= 11; i++) {
+            final int j = i;
+            ofy().transact(new VoidWork() {
+                @Override
+                public void vrun() {
+                    //Encounter encounter = new Encounter(date);
+                    EncounterEvent userEncountered = new EncounterEvent(myKey, mockUsers[j]);
+                    ofy().save().entity(userEncountered).now();
+                }
+            });
+        }
+    }
 }

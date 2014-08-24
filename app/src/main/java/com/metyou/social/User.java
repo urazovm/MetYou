@@ -42,7 +42,7 @@ public class User {
 
     public User(String name) {
         this.id = id;
-        name = "mihai";
+        this.name = name;
     }
 
     public String getUserId() {

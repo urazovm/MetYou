@@ -11,7 +11,7 @@
     <PreferenceCategory
         android:title="@string/settings_category">
 
-        <com.metyou.fragments.LogOutPreference
+        <com.metyou.fragments.settings.LogOutPreference
             android:title="@string/log_out"/>
 
     </PreferenceCategory>

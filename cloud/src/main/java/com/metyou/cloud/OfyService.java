@@ -3,6 +3,8 @@ package com.metyou.cloud;
 import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.ObjectifyFactory;
 import com.googlecode.objectify.ObjectifyService;
+import com.metyou.cloud.entity.AppUser;
+import com.metyou.cloud.entity.SocialIdentity;
 
 /**
  * Objectify service wrapper so we can statically register our persistence classes
@@ -12,14 +14,14 @@ import com.googlecode.objectify.ObjectifyService;
 public class OfyService {
 
     static {
-        ObjectifyService.register(RegistrationRecord.class);
+        ObjectifyService.setFactory(new OfyFactory());
     }
 
-    public static Objectify ofy() {
-        return ObjectifyService.ofy();
+    public static Ofy ofy() {
+        return (Ofy)ObjectifyService.ofy();
     }
 
-    public static ObjectifyFactory factory() {
-        return ObjectifyService.factory();
+    public static OfyFactory factory() {
+        return (OfyFactory)ObjectifyService.factory();
     }
 }

@@ -1,4 +1,4 @@
-package com.metyou.fragments;
+package com.metyou.fragments.settings;
 
 import android.app.Activity;
 import android.content.Context;

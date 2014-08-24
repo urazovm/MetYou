@@ -38,6 +38,8 @@ public abstract class SocialProvider {
         return id;
     }
 
+
+
     public static void deletePreferences(Context context) {
         SharedPreferences.Editor preferences = context.getSharedPreferences(
                 PREFERENCES_FILE,
@@ -88,7 +90,10 @@ public abstract class SocialProvider {
 
     private static void storeUserInfo(GraphUser user, Response response, SocialProviderListener listener) {
         String userEmail = (String)user.getProperty("email");
+
+        Log.d(TAG, user.getInnerJSONObject().toString());
         Log.d(TAG, userEmail);
+        Log.d(TAG, user.getFirstName());
         Activity activity = listener.getActivity();
         SharedPreferences.Editor preferences = activity.getSharedPreferences(
                 PREFERENCES_FILE,
@@ -114,7 +119,7 @@ public abstract class SocialProvider {
 
     public static SocialIdentity getSocialIdentity() {
         SocialIdentity socialIdentity = new SocialIdentity();
-        socialIdentity.setSocialId(facebookId);
+        socialIdentity.setProvider(facebookId);
         socialIdentity.setEmail(email);
         socialIdentity.setProvider(FACEBOOK);
         return socialIdentity;

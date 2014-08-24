@@ -2,14 +2,20 @@ package com.metyou.cloudapi;
 
 import android.support.annotation.Nullable;
 
+import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.metyou.cloud.services.Services;
 import com.metyou.cloud.services.model.SocialIdentity;
 import com.metyou.cloud.services.model.UsersBatch;
+
+import java.io.IOException;
+import java.util.Date;
 
 /**
  * Created by mihai on 8/7/14.
@@ -35,7 +41,7 @@ public class CloudApi {
 
     private Services getApiServiceHandle(@Nullable GoogleAccountCredential credential) {
         Services.Builder services = new Services.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential);
-        services.setRootUrl("http://192.168.1.105:8080/_ah/api/");
+        services.setRootUrl("http://192.168.1.104:8080/_ah/api/");
         return services.build();
     }
 
@@ -47,6 +53,11 @@ public class CloudApi {
     public void insertEncounteredUsers(UsersBatch users, StoreNetUsers.StoreUsersCallback callback) {
         StoreNetUsers storeTask = new StoreNetUsers(services, users, callback);
         storeTask.execute();
+    }
+
+    public void getUsers(String id, Date beginningDate, GetUsersTask.GetUsersCallback callback) {
+        GetUsersTask getUsersTask = new GetUsersTask(services, 10, id, beginningDate, callback);
+        getUsersTask.execute();
     }
 
 }

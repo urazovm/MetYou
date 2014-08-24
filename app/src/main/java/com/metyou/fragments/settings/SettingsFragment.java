@@ -1,4 +1,4 @@
-package com.metyou.fragments;
+package com.metyou.fragments.settings;
 
 
 import android.os.Bundle;
