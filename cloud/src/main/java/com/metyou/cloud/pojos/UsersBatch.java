@@ -1,7 +1,6 @@
 package com.metyou.cloud.pojos;
 
-import com.metyou.cloud.entity.EncounterEvent;
-
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -9,15 +8,15 @@ import java.util.List;
  */
 public class UsersBatch {
     private boolean reachedEnd;
-    private List<UserEncountered> users;
+    private List<UserEncountered> users = new ArrayList<UserEncountered>();
     private String key;
 
     public List<UserEncountered> getUsers() {
         return users;
     }
 
-    public void setUsers(List<UserEncountered> users) {
-        this.users = users;
+    public void addUser(UserEncountered user) {
+        users.add(user);
     }
 
     public String getKey() {
@@ -34,5 +33,9 @@ public class UsersBatch {
 
     public void setReachedEnd(boolean reachedEnd) {
         this.reachedEnd = reachedEnd;
+    }
+
+    public int size() {
+        return users.size();
     }
 }

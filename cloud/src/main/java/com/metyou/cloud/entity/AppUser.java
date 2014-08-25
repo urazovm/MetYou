@@ -16,6 +16,6 @@ public class AppUser {
     @Id
     public Long id;
 
-    public String name;
+    public String firstName;
 
 }

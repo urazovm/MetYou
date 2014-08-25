@@ -4,9 +4,9 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.googlecode.objectify.ObjectifyFactory;
 import com.metyou.cloud.entity.AppUser;
-import com.metyou.cloud.entity.Encounter;
-import com.metyou.cloud.entity.SocialIdentity;
 import com.metyou.cloud.entity.EncounterEvent;
+import com.metyou.cloud.entity.SocialIdentity;
+import com.metyou.cloud.entity.EncounterInfo;
 
 import javax.inject.Inject;
 
@@ -24,8 +24,8 @@ public class OfyFactory extends ObjectifyFactory {
     public OfyFactory() {
         this.register(AppUser.class);
         this.register(SocialIdentity.class);
+        this.register(EncounterInfo.class);
         this.register(EncounterEvent.class);
-        this.register(Encounter.class);
     }
 
 //    @Override

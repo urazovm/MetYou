@@ -10,17 +10,20 @@ import com.google.appengine.api.users.User;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.VoidWork;
 import com.metyou.cloud.entity.AppUser;
-import com.metyou.cloud.entity.SocialIdentity;
 import com.metyou.cloud.entity.EncounterEvent;
+import com.metyou.cloud.entity.SocialIdentity;
+import com.metyou.cloud.entity.EncounterInfo;
 import com.metyou.cloud.pojos.UserEncountered;
 import com.metyou.cloud.pojos.UsersBatch;
+import com.metyou.cloud.pojos.UsersRequest;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import static com.metyou.cloud.OfyService.ofy;
@@ -137,26 +140,64 @@ public class MetYou {
 
         Logger logger = Logger.getLogger("services");
         UsersBatch usersBatch = new UsersBatch();
+        usersBatch.setReachedEnd(true);
 
-        Iterable<EncounterEvent> users = ofy().load()
-                .type(EncounterEvent.class)
-                .filter("users", Key.create(AppUser.class, req.getUserKey()));
+        List<EncounterInfo> users = ofy().load()
+                .type(EncounterInfo.class)
+                .filter("users", Key.create(AppUser.class, req.getUserKey())).list();
 
+        TreeMap<EncounterEvent, EncounterInfo> events = new TreeMap<EncounterEvent,EncounterInfo>(new Comparator<EncounterEvent>() {
+            @Override
+            public int compare(EncounterEvent o1, EncounterEvent o2) {
+                return o1.date.compareTo(o2.date);
+            }
+        });
 
-        List<UserEncountered> events = new ArrayList<UserEncountered>();
-        for (EncounterEvent encounterEvent : users) {
+        logger.info("user encountered " + users.size());
+        int offset = 0;
+        for (EncounterInfo encounterInfo : users) {
+            Long infoId = encounterInfo.getOtherUserId(req.getUserKey());
 
-            Long id = encounterEvent.getOtherUser(req.getUserKey());
-            String firstName = ofy().load().type(SocialIdentity.class)
-                    .filter("user", Key.create(AppUser.class, id))
-                    .first().now().getFirstName();
+            logger.info("user encountered id " + infoId);
+            EncounterEvent event = ofy().load().type(EncounterEvent.class)
+                    .filter("encounterInfoRef", encounterInfo)
+                    .filter("date >=", req.getBeginningDate())
+                    .first().now();
 
-            events.add(new UserEncountered(firstName));
+            if (event == null) {
+                logger.info("no events");
+                continue;
+            }
+
+            if (event.date.equals(req.getBeginningDate()) && offset < req.getOffset()) {
+                offset++;
+                continue;
+            }
+            events.put(event, encounterInfo);
+        }
+
+        offset = -1;
+        Date lastDate = events.firstEntry().getKey().date;
+        for (Map.Entry<EncounterEvent, EncounterInfo> entry : events.entrySet()) {
+            if (usersBatch.size() == req.getCount() + 1) {
+                usersBatch.setReachedEnd(false);
+                break;
+            }
+
+            if (lastDate.equals(entry.getKey().date)) {
+                offset++;
+            } else {
+                offset = 0;
+                lastDate = entry.getKey().date;
+            }
+            EncounterInfo info = entry.getValue();
+            AppUser appUser = info.getOtherAppUser(req.getUserKey());
+            UserEncountered userEncountered = new UserEncountered(appUser.firstName, entry.getKey().date);
+            usersBatch.addUser(userEncountered);
+
         }
 
         logger.info("events " + events.size());
-
-        usersBatch.setUsers(events);
         return usersBatch;
 
 //        UsersBatch usersBatch = new UsersBatch();
@@ -207,7 +248,7 @@ public class MetYou {
 
     static private AppUser registerMockUser(String email, String fbId, String name) {
         AppUser appUser = new AppUser();
-        appUser.name = name;
+        appUser.firstName = name;
         ofy().save().entity(appUser).now();
         SocialIdentity socialIdentity = new SocialIdentity(fbId, email, "facebook");
         socialIdentity.setFirstName(name);
@@ -218,17 +259,21 @@ public class MetYou {
 
     static private void setEncounteredUsers() {
         Calendar c = Calendar.getInstance();
-        c.set(2014, 7, 15);
-        final Date date = c.getTime();
+        int day = 15;
 
         for (int i = 0; i <= 11; i++) {
             final int j = i;
+            c.set(2014, 7, day);
+            day++;
+            final Date date = c.getTime();
+
             ofy().transact(new VoidWork() {
                 @Override
                 public void vrun() {
-                    //Encounter encounter = new Encounter(date);
-                    EncounterEvent userEncountered = new EncounterEvent(myKey, mockUsers[j]);
-                    ofy().save().entity(userEncountered).now();
+                    EncounterInfo info = new EncounterInfo(myKey, mockUsers[j]);
+                    ofy().save().entity(info).now();
+                    EncounterEvent encounter = new EncounterEvent(info, date);
+                    ofy().save().entity(encounter).now();
                 }
             });
         }

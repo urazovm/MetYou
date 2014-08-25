@@ -1,5 +1,6 @@
-package com.metyou.cloud;
+package com.metyou.cloud.pojos;
 
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -9,8 +10,16 @@ public class UsersRequest {
     private Date beginningDate;
     private int count;
     private Long userKey;
+    private int offset;
+
+    public int year, month, day; //used by explorer
 
     public Date getBeginningDate() {
+        if (beginningDate == null) {
+            Calendar c = Calendar.getInstance();
+            c.set(year, month, day);
+            beginningDate = c.getTime();
+        }
         return beginningDate;
     }
 
@@ -32,5 +41,13 @@ public class UsersRequest {
 
     public void setUserKey(Long userKey) {
         this.userKey = userKey;
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
 }
