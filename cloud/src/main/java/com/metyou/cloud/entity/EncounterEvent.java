@@ -5,6 +5,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Load;
+import com.googlecode.objectify.annotation.Parent;
 
 import java.util.Date;
 
@@ -16,13 +17,14 @@ import java.util.Date;
 public class EncounterEvent {
 
     @Id
-    Long id;
+    public Long id;
 
     @Index
     public Date date;
 
     @Load
     @Index
+    @Parent
     public Ref<EncounterInfo> encounterInfoRef;
 
     public EncounterEvent() {

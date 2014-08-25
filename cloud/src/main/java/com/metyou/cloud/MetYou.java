@@ -144,60 +144,33 @@ public class MetYou {
 
         List<EncounterInfo> users = ofy().load()
                 .type(EncounterInfo.class)
-                .filter("users", Key.create(AppUser.class, req.getUserKey())).list();
+                .filter("users", Key.create(AppUser.class, req.getUserKey()))
+                .order("-lastSeen")
+                .list();
 
-        TreeMap<EncounterEvent, EncounterInfo> events = new TreeMap<EncounterEvent,EncounterInfo>(new Comparator<EncounterEvent>() {
-            @Override
-            public int compare(EncounterEvent o1, EncounterEvent o2) {
-                return o1.date.compareTo(o2.date);
-            }
-        });
-
-        logger.info("user encountered " + users.size());
-        int offset = 0;
-        for (EncounterInfo encounterInfo : users) {
-            Long infoId = encounterInfo.getOtherUserId(req.getUserKey());
-
-            logger.info("user encountered id " + infoId);
-            EncounterEvent event = ofy().load().type(EncounterEvent.class)
-                    .filter("encounterInfoRef", encounterInfo)
-                    .filter("date >=", req.getBeginningDate())
-                    .first().now();
-
-            if (event == null) {
-                logger.info("no events");
-                continue;
-            }
-
-            if (event.date.equals(req.getBeginningDate()) && offset < req.getOffset()) {
-                offset++;
-                continue;
-            }
-            events.put(event, encounterInfo);
-        }
-
-        offset = -1;
-        Date lastDate = events.firstEntry().getKey().date;
-        for (Map.Entry<EncounterEvent, EncounterInfo> entry : events.entrySet()) {
-            if (usersBatch.size() == req.getCount() + 1) {
-                usersBatch.setReachedEnd(false);
-                break;
-            }
-
-            if (lastDate.equals(entry.getKey().date)) {
-                offset++;
+        int offset = 0, count = 0;
+        for (EncounterInfo encUser : users) {
+            if (encUser.lastSeen.compareTo(req.getBeginningDate()) > 0) {
+                AppUser appUser = encUser.getOtherAppUser(req.getUserKey());
+                UserEncountered userEncountered = new UserEncountered(appUser.firstName, encUser.lastSeen);
+                usersBatch.addUser(userEncountered);
             } else {
-                offset = 0;
-                lastDate = entry.getKey().date;
+                if (offset == req.getOffset()) {
+                    if (count == req.getCount()) {
+                        usersBatch.setReachedEnd(false);
+                        break;
+                    } else {
+                        AppUser appUser = encUser.getOtherAppUser(req.getUserKey());
+                        UserEncountered userEncountered = new UserEncountered(appUser.firstName, encUser.lastSeen);
+                        usersBatch.addUser(userEncountered);
+                        count++;
+                    }
+                } else {
+                    offset++;
+                }
             }
-            EncounterInfo info = entry.getValue();
-            AppUser appUser = info.getOtherAppUser(req.getUserKey());
-            UserEncountered userEncountered = new UserEncountered(appUser.firstName, entry.getKey().date);
-            usersBatch.addUser(userEncountered);
-
         }
 
-        logger.info("events " + events.size());
         return usersBatch;
 
 //        UsersBatch usersBatch = new UsersBatch();
@@ -271,6 +244,7 @@ public class MetYou {
                 @Override
                 public void vrun() {
                     EncounterInfo info = new EncounterInfo(myKey, mockUsers[j]);
+                    info.lastSeen = date;
                     ofy().save().entity(info).now();
                     EncounterEvent encounter = new EncounterEvent(info, date);
                     ofy().save().entity(encounter).now();

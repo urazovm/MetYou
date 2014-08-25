@@ -7,6 +7,7 @@ import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Load;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -26,6 +27,9 @@ public class EncounterInfo {
     @Load
     @Index
     private ArrayList<Ref<AppUser>> users = new ArrayList<Ref<AppUser>>();
+
+    @Index
+    public Date lastSeen;
 
     public EncounterInfo() {
     }
