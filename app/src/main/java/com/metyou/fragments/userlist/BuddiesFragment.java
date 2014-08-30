@@ -1,10 +1,7 @@
 package com.metyou.fragments.userlist;
 
 
-import android.app.Activity;
 import android.app.Fragment;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -13,14 +10,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 
-import com.facebook.AccessToken;
-import com.facebook.HttpMethod;
-import com.facebook.Request;
-import com.facebook.RequestBatch;
-import com.facebook.Response;
-import com.facebook.Session;
-import com.facebook.SessionState;
-import com.facebook.model.GraphObject;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.util.DateTime;
 import com.metyou.R;
@@ -32,15 +21,9 @@ import com.metyou.cloudapi.CloudApi;
 import com.metyou.cloudapi.GetUsersTask;
 import com.metyou.fragments.userlist.refreshner.SwipeRefreshLayout;
 import com.metyou.social.SocialProvider;
-import com.metyou.social.User;
 import com.metyou.util.ImageCache;
 import com.metyou.util.ImageFetcher;
 
-import org.json.JSONException;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -49,28 +32,21 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
 
     private static final String TAG = "BuddiesFragment";
     private static final String IMAGE_CACHE_DIR = "thumbs";
-    ListView userListView;
-    UserListAdapter arrayAdapter;
-    ArrayList<ListRow> userList;
-    EndlessScrollListener endlessScrollListener;
-    Date lastDate;
-    private int offset = 0;
-    private UsersRequest usersRequest;
+    private static final int AMOUNT_TO_LOAD = 10;
+    private ListView userListView;
+    private UserListAdapter arrayAdapter;
+    private ArrayList<ListRow> userList;
+    private EndlessScrollListener endlessScrollListener;
 
     private ImageFetcher imageFetcher;
 
     private SwipeRefreshLayout swipeRefreshLayout;
+    private Date lastRefreshDate;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         userList = new ArrayList<ListRow>();
-        usersRequest = new UsersRequest();
-        usersRequest.setBeginningDate(new DateTime(new Date()));
-        usersRequest.setCount(10);
-        usersRequest.setOffset(offset);
-        usersRequest.setUserKey(SocialProvider.getId());
-
 
         ImageCache.ImageCacheParams cacheParams =
                 new ImageCache.ImageCacheParams(getActivity(), IMAGE_CACHE_DIR);
@@ -78,11 +54,6 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
         imageFetcher = new ImageFetcher(getActivity(), 60, 60);
         imageFetcher.addImageCache(getFragmentManager(), cacheParams);
 
-//        for (int i = 0; i < 10; i++) {
-//            UserEncountered ue = new UserEncountered();
-//            ue.setFirstName("sample");
-//            userList.add(new UserRow(ue));
-//        }
         arrayAdapter = new UserListAdapter(getActivity(),
                 android.R.layout.simple_list_item_1,
                 userList,
@@ -99,17 +70,15 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-
                 Log.d(TAG, "refresh");
-                new Handler().postDelayed(new Runnable() {
-                    @Override public void run() {
-                        swipeRefreshLayout.setRefreshing(false);
-                    }
-                }, 3000);
-
+                lastRefreshDate = new Date();
+                UsersRequest usersRequest = new UsersRequest();
+                usersRequest.setUserKey(SocialProvider.getId());
+                usersRequest.setBeginningDate(new DateTime(lastRefreshDate));
+                usersRequest.setCount(AMOUNT_TO_LOAD);
+                usersRequest.setOffset(0);
+                requestUsers(usersRequest, GetUsersTask.RequestType.REFRESH);
             }
-
-
         });
         userListView = (ListView)view.findViewById(R.id.buddy_list);
         userListView.setOnScrollListener(endlessScrollListener);
@@ -121,7 +90,15 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
     public void onResume() {
         super.onResume();
         imageFetcher.setExitTasksEarly(false);
-        requestUsers(usersRequest);
+        if (arrayAdapter.isEmpty()) {
+            lastRefreshDate = new Date();
+            UsersRequest usersRequest = new UsersRequest();
+            usersRequest.setUserKey(SocialProvider.getId());
+            usersRequest.setBeginningDate(new DateTime(lastRefreshDate));
+            usersRequest.setCount(AMOUNT_TO_LOAD);
+            usersRequest.setOffset(0);
+            requestUsers(usersRequest, GetUsersTask.RequestType.EMPTY);
+        }
     }
 
     @Override
@@ -141,18 +118,21 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
     @Override
     public void onBottom() {
         Log.d(TAG, "on Bottom");
+        UsersRequest usersRequest = new UsersRequest();
+        usersRequest.setUserKey(SocialProvider.getId());
+        usersRequest.setBeginningDate(new DateTime(lastRefreshDate));
+        usersRequest.setCount(AMOUNT_TO_LOAD);
         usersRequest.setOffset(arrayAdapter.getCount());
-        requestUsers(usersRequest);
+        requestUsers(usersRequest, GetUsersTask.RequestType.MORE);
     }
 
     @Override
-    public void onUserLoaded(UsersBatch usersBatch) {
-        if (usersBatch == null) {
+    public void onUsersLoaded(GetUsersTask.RequestType reqType, UsersBatch usersBatch) {
+        if (usersBatch == null || usersBatch.getUsers() == null) {
+            handleRequestType(reqType);
             return;
         }
-        if (usersBatch.getUsers() == null) {
-            return;
-        }
+
         Log.d(TAG, "loaded " + usersBatch.getUsers().size() + " users");
 
         if (arrayAdapter.getCount() != 0) {
@@ -172,16 +152,37 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
         } else {
             endlessScrollListener.performTaskOnBottom(false);
         }
-        endlessScrollListener.onBottomTaskFinished();
+
+        handleRequestType(reqType);
     }
 
-    private void requestUsers(UsersRequest ur) {
-        SocialIdentity socialIdentity = SocialProvider.getSocialIdentity();
+    private void handleRequestType(GetUsersTask.RequestType reqType) {
+        if (reqType == GetUsersTask.RequestType.MORE) {
+            endlessScrollListener.onBottomTaskFinished();
+        } else if (reqType == GetUsersTask.RequestType.REFRESH) {
+            new Handler().post(new Runnable() {
+                @Override
+                public void run() {
+                    if (swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                }
+            });
+        } else {
+            if (arrayAdapter.getCount() > 0) {
+                swipeRefreshLayout.setActive(true);
+            } else {
+                swipeRefreshLayout.setActive(false);
+            }
+        }
+    }
 
+    private void requestUsers(UsersRequest ur, GetUsersTask.RequestType type) {
+        SocialIdentity socialIdentity = SocialProvider.getSocialIdentity();
         GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(
                 getActivity(), CloudApi.AUDIENCE);
         credential.setSelectedAccountName(socialIdentity.getEmail());
         CloudApi cloudApi = CloudApi.getCloudApi(credential);
-        cloudApi.getUsers(ur, this);
+        cloudApi.getUsers(ur, type, this);
     }
 }

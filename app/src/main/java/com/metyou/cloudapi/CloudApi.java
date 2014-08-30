@@ -56,8 +56,8 @@ public class CloudApi {
         storeTask.execute();
     }
 
-    public void getUsers(UsersRequest ur ,GetUsersTask.GetUsersCallback callback) {
-        GetUsersTask getUsersTask = new GetUsersTask(services, ur, callback);
+    public void getUsers(UsersRequest ur, GetUsersTask.RequestType type, GetUsersTask.GetUsersCallback callback) {
+        GetUsersTask getUsersTask = new GetUsersTask(services, ur, type, callback);
         getUsersTask.execute();
     }
 

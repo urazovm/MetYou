@@ -17,11 +17,13 @@ import java.net.URL;
 public class UserRow implements ListRow {
     private static final String TAG = "USER_ROW";
     private String socialId;
+    private Long key;
     private String firstName;
 
     public UserRow(UserEncountered userEncountered) {
         this.firstName = userEncountered.getFirstName();
         this.socialId = userEncountered.getSocialId();
+        this.key = userEncountered.getKey();
     }
 
     public String getFirstName() {

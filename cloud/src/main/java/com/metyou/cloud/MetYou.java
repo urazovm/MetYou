@@ -140,7 +140,6 @@ public class MetYou {
             throw new OAuthRequestException("missing user");
         }
 
-        Logger logger = Logger.getLogger("services");
         UsersBatch usersBatch = new UsersBatch();
         usersBatch.setReachedEnd(true);
 
@@ -152,14 +151,15 @@ public class MetYou {
 
         int offset = 0, count = 0;
         for (EncounterInfo encUser : users) {
+            AppUser appUser = encUser.getOtherAppUser(req.getUserKey());
+            UserEncountered userEncountered = new UserEncountered(appUser.firstName, encUser.lastSeen);
             if (encUser.lastSeen.compareTo(req.getBeginningDate()) > 0) {
-                AppUser appUser = encUser.getOtherAppUser(req.getUserKey());
-                UserEncountered userEncountered = new UserEncountered(appUser.firstName, encUser.lastSeen);
                 SocialIdentity socialIdentity = ofy().load().type(SocialIdentity.class)
                         .filter("user", Key.create(AppUser.class, encUser.getOtherUserId(req.getUserKey())))
                         .first().now();
 
                 userEncountered.socialId = socialIdentity.getProviderId();
+                userEncountered.key = appUser.id;
                 usersBatch.addUser(userEncountered);
             } else {
                 if (offset == req.getOffset()) {
@@ -167,12 +167,11 @@ public class MetYou {
                         usersBatch.setReachedEnd(false);
                         break;
                     } else {
-                        AppUser appUser = encUser.getOtherAppUser(req.getUserKey());
-                        UserEncountered userEncountered = new UserEncountered(appUser.firstName, encUser.lastSeen);
                         SocialIdentity socialIdentity = ofy().load().type(SocialIdentity.class)
                                 .filter("user", Key.create(AppUser.class, encUser.getOtherUserId(req.getUserKey())))
                                 .first().now();
                         userEncountered.socialId = socialIdentity.getProviderId();
+                        userEncountered.key = appUser.id;
                         usersBatch.addUser(userEncountered);
                         count++;
                     }

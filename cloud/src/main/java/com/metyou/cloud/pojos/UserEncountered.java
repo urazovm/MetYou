@@ -11,6 +11,7 @@ public class UserEncountered {
     public String socialId;
     public String firstName;
     public Date date;
+    public Long key;
 
 
     public UserEncountered(String firstName, Date date) {
