@@ -84,6 +84,8 @@ public class MetYou {
             return null;
         }
 
+        logger.info("provider id " + socialIdentity.getProviderId());
+
         CloudResponse response = new CloudResponse();
         SocialIdentity exists = ofy().load().type(SocialIdentity.class)
                 .filter("provider", socialIdentity.getProvider())
@@ -153,6 +155,11 @@ public class MetYou {
             if (encUser.lastSeen.compareTo(req.getBeginningDate()) > 0) {
                 AppUser appUser = encUser.getOtherAppUser(req.getUserKey());
                 UserEncountered userEncountered = new UserEncountered(appUser.firstName, encUser.lastSeen);
+                SocialIdentity socialIdentity = ofy().load().type(SocialIdentity.class)
+                        .filter("user", Key.create(AppUser.class, encUser.getOtherUserId(req.getUserKey())))
+                        .first().now();
+
+                userEncountered.socialId = socialIdentity.getProviderId();
                 usersBatch.addUser(userEncountered);
             } else {
                 if (offset == req.getOffset()) {
@@ -162,6 +169,10 @@ public class MetYou {
                     } else {
                         AppUser appUser = encUser.getOtherAppUser(req.getUserKey());
                         UserEncountered userEncountered = new UserEncountered(appUser.firstName, encUser.lastSeen);
+                        SocialIdentity socialIdentity = ofy().load().type(SocialIdentity.class)
+                                .filter("user", Key.create(AppUser.class, encUser.getOtherUserId(req.getUserKey())))
+                                .first().now();
+                        userEncountered.socialId = socialIdentity.getProviderId();
                         usersBatch.addUser(userEncountered);
                         count++;
                     }
@@ -172,46 +183,6 @@ public class MetYou {
         }
 
         return usersBatch;
-
-//        UsersBatch usersBatch = new UsersBatch();
-//        usersBatch.setReachedEnd(true);
-//        ArrayList<UserEncountered> users = new ArrayList<UserEncountered>();
-//        Query query = new Query("UserEncountered")/*.setAncestor(KeyFactory.stringToKey(req.getUserKey()))*/;
-//        Query.Filter timeFilter = new Query.FilterPredicate(
-//                "time",
-//                Query.FilterOperator.LESS_THAN,
-//                req.getBeginningDate()
-//        );
-//        query.setFilter(timeFilter);
-//        PreparedQuery pq = datastore.prepare(query);
-//
-//        for (Entity entity : pq.asIterable()) {
-//            if (users.size() == req.getCount()) {
-//                usersBatch.setReachedEnd(false);
-//                break;
-//            }
-//            UserEncountered userEncountered = new UserEncountered();
-//            userEncountered.setUserId((String)entity.getProperty("userId"));
-//
-//            Entity userEntity = null;
-//
-//            String firstName = null;
-//            String socialId = null;
-//            try {
-//                userEntity = datastore.get(KeyFactory.stringToKey((String) entity.getProperty("userId")));
-//                firstName = String.valueOf(userEntity.getProperty("FirstName"));
-//            } catch (EntityNotFoundException e) {
-//                e.printStackTrace();
-//            }
-//
-//            Query socialQuery = new Query("SocialIdentity").setAncestor(userEntity.getKey());
-//            socialId = String.valueOf(datastore.prepare(socialQuery).asSingleEntity().getProperty("socialId"));
-//            userEncountered.setFirstName(firstName);
-//            userEncountered.setSocialId(socialId);
-//            users.add(userEncountered);
-//        }
-//        usersBatch.setUsers(users);
-//        return usersBatch;
     }
 
 

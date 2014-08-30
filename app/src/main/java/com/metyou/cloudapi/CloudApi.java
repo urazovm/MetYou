@@ -13,6 +13,7 @@ import com.google.api.client.json.JsonFactory;
 import com.metyou.cloud.services.Services;
 import com.metyou.cloud.services.model.SocialIdentity;
 import com.metyou.cloud.services.model.UsersBatch;
+import com.metyou.cloud.services.model.UsersRequest;
 
 import java.io.IOException;
 import java.util.Date;
@@ -55,8 +56,8 @@ public class CloudApi {
         storeTask.execute();
     }
 
-    public void getUsers(String id, Date beginningDate, GetUsersTask.GetUsersCallback callback) {
-        GetUsersTask getUsersTask = new GetUsersTask(services, 10, id, beginningDate, callback);
+    public void getUsers(UsersRequest ur ,GetUsersTask.GetUsersCallback callback) {
+        GetUsersTask getUsersTask = new GetUsersTask(services, ur, callback);
         getUsersTask.execute();
     }
 

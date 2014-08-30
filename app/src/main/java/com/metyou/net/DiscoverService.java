@@ -1,5 +1,6 @@
 package com.metyou.net;
 
+import android.app.Activity;
 import android.app.IntentService;
 import android.app.TabActivity;
 import android.content.Context;
@@ -69,15 +70,15 @@ public class DiscoverService extends IntentService {
                     Log.d("Net Service Discovery", "Service discovery success " + service);
                     if (!service.getServiceType().equals(serviceType)) {
                         Log.d("Net Service Discovery", "Unknown Service Type: " + service.getServiceType());
-                    } else if (service.getServiceName().equals(serviceName + SocialProvider.getId(getApplicationContext()))) {
+                    } else if (service.getServiceName().equals(serviceName + SocialProvider.getId())) {
                         Log.d("Net Service Discovery", "Same machine: " + serviceName);
                     } else if (service.getServiceName().contains(serviceName)) {
                         //mNsdManager.resolveService(service, mResolveListener);
                         Log.d("Net Service Discovery", "discovered: " + service.getServiceName());
-                        UserEncountered userEncountered = new UserEncountered();
-                        userEncountered.setUserId(serviceToKey(service.getServiceName()));
-                        userEncountered.setTimeEncountered(new DateTime(new Date()));
-                        usersDiscovered.add(userEncountered);
+//                        UserEncountered userEncountered = new UserEncountered();
+//                        userEncountered.setUserId(serviceToKey(service.getServiceName()));
+//                        userEncountered.setTimeEncountered(new DateTime(new Date()));
+//                        usersDiscovered.add(userEncountered);
                     }
                 }
 
@@ -120,7 +121,7 @@ public class DiscoverService extends IntentService {
             if (usersDiscovered.isEmpty()){
                 return;
             }
-            SocialProvider.readPreferences(this);
+            SocialProvider.init((Activity) getApplicationContext());
             SocialIdentity socialIdentity = SocialProvider.getSocialIdentity();
 
             GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(
@@ -130,7 +131,7 @@ public class DiscoverService extends IntentService {
             CloudApi cloudApi = CloudApi.getCloudApi(credential);
             UsersBatch usersBatch = new UsersBatch();
             usersBatch.setUsers(usersDiscovered);
-            usersBatch.setKey(SocialProvider.getId(this));
+            //usersBatch.setKey(SocialProvider.getId(this));
             cloudApi.insertEncounteredUsers(usersBatch, null);
             Log.d(TAG, "after executor");
 
@@ -164,8 +165,8 @@ public class DiscoverService extends IntentService {
 
     public void registerService(int port, Context context) {
         NsdServiceInfo serviceInfo = new NsdServiceInfo();
-        SocialProvider.readPreferences(this);
-        serviceInfo.setServiceName(serviceName + SocialProvider.getId(context));
+        SocialProvider.init(getApplicationContext());
+        serviceInfo.setServiceName(serviceName + SocialProvider.getId());
         serviceInfo.setServiceType(serviceType);
         serviceInfo.setPort(port);
         mNsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);

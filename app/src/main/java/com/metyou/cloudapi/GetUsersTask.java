@@ -19,34 +19,24 @@ public class GetUsersTask extends AsyncTask<Void, Void, UsersBatch> {
 
     private final Services services;
     private final GetUsersCallback callback;
-    private final int count;
-    private final String id;
-    private final Date beginningDate;
+    private final UsersRequest request;
 
     public interface GetUsersCallback {
         public void onUserLoaded(UsersBatch usersBatch);
     }
     
     public GetUsersTask(Services services,
-                        int count,
-                        String id,
-                        Date beginningDate,
+                        UsersRequest ur,
                         GetUsersCallback callback) {
         this.services = services;
         this.callback = callback;
-        this.count = count;
-        this.id = id;
-        this.beginningDate = beginningDate;
+        this.request = ur;
     }
     
     @Override
     protected UsersBatch doInBackground(Void... params) {
-        UsersRequest usersRequest = new UsersRequest();
-        usersRequest.setCount(count);
-        usersRequest.setBeginningDate(new DateTime(beginningDate));
-        usersRequest.setUserKey(id);
         try {
-            Services.ServicesOperations.GetUsers getUsers = services.services().getUsers(usersRequest);
+            Services.ServicesOperations.GetUsers getUsers = services.services().getUsers(request);
             return getUsers.execute();
         } catch (IOException e) {
             e.printStackTrace();

@@ -8,6 +8,7 @@ import java.util.Date;
  * Created by mihai on 8/24/14.
  */
 public class UserEncountered {
+    public String socialId;
     public String firstName;
     public Date date;
 

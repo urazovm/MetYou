@@ -95,10 +95,12 @@ public class LoginActivity extends Activity implements
             if (getIntent().getAction().equals(LOG_OUT_ACTION)) {
                 logOut();
             } else {
-                //already signed in; check id
+                //already signed in; set social data
+                SocialProvider.init(this);
+                // check id
                 Log.d(TAG, "already signed in");
-                String id = SocialProvider.getId(this);
-                if (id.equals("-1")) {
+                Long id = SocialProvider.getId();
+                if (id.equals(-1)) {
                     logOut();
                 } else {
                     startMainActivity();
@@ -234,6 +236,7 @@ public class LoginActivity extends Activity implements
         if (response.getError() != null) {
             logOut();
         } else {
+            SocialProvider.init(this);
             registerUser();
         }
     }
@@ -254,6 +257,7 @@ public class LoginActivity extends Activity implements
             SharedPreferences.Editor editor = getSharedPreferences(PREFERENCES_FILE, MODE_PRIVATE).edit();
             editor.putLong(USER_ID, response.getId());
             editor.commit();
+            SocialProvider.init(this);
             startMainActivity();
         }
     }

@@ -115,9 +115,8 @@ public class MainActivity extends Activity /*,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
-        SocialProvider.readPreferences(this);
         if (SocialProvider.currentProvider() != SocialProvider.NONE) {
-            Log.d(TAG, "Already signed in! User Id: " + SocialProvider.getId(this));
+            Log.d(TAG, "Already signed in! User Id: " + SocialProvider.getId());
         }
         setActionBarTabs();
         netServiceManager = new NetServiceManager(this);

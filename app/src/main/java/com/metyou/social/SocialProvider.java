@@ -18,7 +18,7 @@ import com.metyou.cloud.services.model.SocialIdentity;
  */
 public abstract class SocialProvider {
     public static final String NONE = "NONE";
-    public static final String FACEBOOK = "FACEBOOK";
+    public static final String FACEBOOK = "facebook";
 
     private static final String TAG = "SocialProvider";
     public static final String FB_USER_ID = "FB_USER_ID";
@@ -28,14 +28,14 @@ public abstract class SocialProvider {
 
     private static String facebookId;
     private static String email;
-    private static String id;
+    private static Long id;
 
-    public static String getId(Context context) {
-        if (id == null) {
-            SharedPreferences preferences = context.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
-            id = preferences.getString(USER_ID, "-1");
-        }
+    public static Long getId() {
         return id;
+    }
+
+    public static void setEmail(String localEmail) {
+        email = localEmail;
     }
 
 
@@ -48,6 +48,14 @@ public abstract class SocialProvider {
         preferences.remove(USER_ID);
         preferences.remove(FB_EMAIL);
         preferences.commit();
+    }
+
+    public static void init(Context activity) {
+        SharedPreferences preferences = activity.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
+        facebookId = preferences.getString(FB_USER_ID, "-1");
+        id = preferences.getLong(USER_ID, -1);
+        email = preferences.getString(FB_EMAIL, "-1");
+        Log.d(TAG, "prefs " + preferences.getAll().toString());
     }
 
     public interface SocialProviderListener {
@@ -109,17 +117,9 @@ public abstract class SocialProvider {
         return facebookId;
     }
 
-    public static void readPreferences(Context context) {
-        SharedPreferences preferences = context.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
-        facebookId = preferences.getString(FB_USER_ID, "-1");
-        id = preferences.getString(USER_ID, "-1");
-        email = preferences.getString(FB_EMAIL, "-1");
-        Log.d(TAG, "prefs " + preferences.getAll().toString());
-    }
-
     public static SocialIdentity getSocialIdentity() {
         SocialIdentity socialIdentity = new SocialIdentity();
-        socialIdentity.setProvider(facebookId);
+        socialIdentity.setProviderId(facebookId);//TODO
         socialIdentity.setEmail(email);
         socialIdentity.setProvider(FACEBOOK);
         return socialIdentity;

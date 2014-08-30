@@ -98,7 +98,7 @@ public class NetServiceManager extends BroadcastReceiver {
 
     public void registerService(Context activity, int port) {
         NsdServiceInfo serviceInfo = new NsdServiceInfo();
-        serviceInfo.setServiceName(serviceName + SocialProvider.getId(activity));
+        serviceInfo.setServiceName(serviceName + SocialProvider.getId());
         serviceInfo.setServiceType(serviceType);
         serviceInfo.setPort(port);
         if (mNsdManager == null) {
