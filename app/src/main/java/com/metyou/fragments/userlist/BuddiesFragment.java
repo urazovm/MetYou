@@ -25,6 +25,7 @@ import com.metyou.util.ImageCache;
 import com.metyou.util.ImageFetcher;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 
 public class BuddiesFragment extends Fragment implements EndlessScrollListener.EndlessScrollCallback,
@@ -36,12 +37,14 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
     private ListView userListView;
     private UserListAdapter arrayAdapter;
     private ArrayList<ListRow> userList;
+    private static LoaderRow loaderRow = new LoaderRow();
     private EndlessScrollListener endlessScrollListener;
-
+    private boolean loaderSet = false;
     private ImageFetcher imageFetcher;
 
     private SwipeRefreshLayout swipeRefreshLayout;
     private Date lastRefreshDate;
+    private Comparator<ListRow> mComparator;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,6 +56,22 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
         cacheParams.setMemCacheSizePercent(0.25f);
         imageFetcher = new ImageFetcher(getActivity(), 60, 60);
         imageFetcher.addImageCache(getFragmentManager(), cacheParams);
+
+        //sort data desc with respect to last seen date
+        mComparator = new Comparator<ListRow>() {
+            @Override
+            public int compare(ListRow lhs, ListRow rhs) {
+                if (lhs instanceof LoaderRow) {
+                    return 1;
+                } else if (rhs instanceof LoaderRow) {
+                    return -1;
+                } else {
+                    UserRow luser = (UserRow)lhs;
+                    UserRow ruser = (UserRow)rhs;
+                    return 0 - luser.getLastSeen().compareTo(ruser.getLastSeen());
+                }
+            }
+        };
 
         arrayAdapter = new UserListAdapter(getActivity(),
                 android.R.layout.simple_list_item_1,
@@ -75,7 +94,7 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
                 UsersRequest usersRequest = new UsersRequest();
                 usersRequest.setUserKey(SocialProvider.getId());
                 usersRequest.setBeginningDate(new DateTime(lastRefreshDate));
-                usersRequest.setCount(AMOUNT_TO_LOAD);
+                usersRequest.setCount(0);
                 usersRequest.setOffset(0);
                 requestUsers(usersRequest, GetUsersTask.RequestType.REFRESH);
             }
@@ -122,42 +141,44 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
         usersRequest.setUserKey(SocialProvider.getId());
         usersRequest.setBeginningDate(new DateTime(lastRefreshDate));
         usersRequest.setCount(AMOUNT_TO_LOAD);
-        usersRequest.setOffset(arrayAdapter.getCount());
+        usersRequest.setOffset(arrayAdapter.getCount() - 2); //count the load row
         requestUsers(usersRequest, GetUsersTask.RequestType.MORE);
     }
 
     @Override
     public void onUsersLoaded(GetUsersTask.RequestType reqType, UsersBatch usersBatch) {
         if (usersBatch == null || usersBatch.getUsers() == null) {
-            handleRequestType(reqType);
+            handleRequestType(reqType, true);
             return;
         }
+        arrayAdapter.setNotifyOnChange(false);
+        Log.d(TAG, usersBatch.getUsers().toString());
 
-        Log.d(TAG, "loaded " + usersBatch.getUsers().size() + " users");
-
-        if (arrayAdapter.getCount() != 0) {
-            ListRow lastRow = arrayAdapter.getItem(arrayAdapter.getCount() - 1);
-            if (lastRow instanceof LoaderRow) {
-                arrayAdapter.remove(lastRow);
+        for (UserEncountered ue : usersBatch.getUsers()) {
+            UserRow userRow = new UserRow(ue);
+            if (arrayAdapter.contains(userRow)) {
+                Log.d(TAG, "found item " + userRow.getKey());
+                arrayAdapter.update(userRow);
+            } else {
+                arrayAdapter.add(userRow);
             }
         }
-        for (UserEncountered ue : usersBatch.getUsers()) {
-            final UserRow userRow = new UserRow(ue);
-            arrayAdapter.add(userRow);
-        }
 
-        if (!usersBatch.getReachedEnd()) {
-            arrayAdapter.add(new LoaderRow());
-            Log.d(TAG, "Added Loader");
-        } else {
-            endlessScrollListener.performTaskOnBottom(false);
-        }
-
-        handleRequestType(reqType);
+        handleRequestType(reqType, usersBatch.getReachedEnd());
+        arrayAdapter.sort(mComparator);
+        arrayAdapter.notifyDataSetChanged();
     }
 
-    private void handleRequestType(GetUsersTask.RequestType reqType) {
+    private void handleRequestType(GetUsersTask.RequestType reqType, boolean reachedEnd) {
         if (reqType == GetUsersTask.RequestType.MORE) {
+            if (!reachedEnd && !loaderSet) {
+                loaderSet = true;
+                arrayAdapter.add(loaderRow);
+            } else if(reachedEnd && loaderSet) {
+                arrayAdapter.remove(loaderRow);
+                loaderSet = false;
+                endlessScrollListener.performTaskOnBottom(false);
+            }
             endlessScrollListener.onBottomTaskFinished();
         } else if (reqType == GetUsersTask.RequestType.REFRESH) {
             new Handler().post(new Runnable() {
@@ -174,6 +195,12 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
             } else {
                 swipeRefreshLayout.setActive(false);
             }
+            if (!reachedEnd && !loaderSet) {
+                loaderSet = true;
+                arrayAdapter.add(loaderRow);
+            } else if (reachedEnd) {
+                endlessScrollListener.performTaskOnBottom(false);
+            }
         }
     }
 
@@ -185,4 +212,5 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
         CloudApi cloudApi = CloudApi.getCloudApi(credential);
         cloudApi.getUsers(ur, type, this);
     }
+
 }

@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
+import sun.rmi.runtime.Log;
+
 import static com.metyou.cloud.OfyService.ofy;
 
 /**
@@ -71,7 +73,18 @@ public class MetYou {
             mockUsers[9] = registerMockUser("wulnaxg_narayananman_1408622649@tfbnw.net", "360916687394684", "Ruth");
             mockUsers[10] = registerMockUser("uypblcj_schrockson_1408622647@tfbnw.net", "357899331025117", "Bob");
             mockUsers[11] = registerMockUser("lhmaeex_sharpeman_1408622647@tfbnw.net", "269846306555394", "Carol");
-
+            mockUsers[12] = registerMockUser("gwtcgha_wisemanson_1409955491@tfbnw.net", "1464992957095938", "Bob");
+            mockUsers[13] = registerMockUser("jyxdibl_warmanson_1409955492@tfbnw.net", "291959724339183", "Betty");
+            mockUsers[14] = registerMockUser("qyzktga_okelolaescu_1409955492@tfbnw.net", "362074840611640", "Patricia");
+            mockUsers[15] = registerMockUser("canzgjt_sidhuwitz_1409955491@tfbnw.net", "293812590815483", "Joe");
+            mockUsers[16] = registerMockUser("mxbvcdx_sidhuwitz_1409955436@tfbnw.net", "1463477267256769", "James");
+            mockUsers[17] = registerMockUser("qgztmvi_sidhusen_1409955437@tfbnw.net", "1503441829899741", "Margaret");
+            mockUsers[18] = registerMockUser("szsnsxr_schrocksen_1409955433@tfbnw.net", "1464469727154945", "Mike");
+            mockUsers[19] = registerMockUser("exourdl_seligsteinsky_1409955436@tfbnw.net", "333198126849557", "Charlie");
+            mockUsers[20] = registerMockUser("detuaix_narayananescu_1409955398@tfbnw.net", "1500431553535066", "Patricia");
+            mockUsers[21] = registerMockUser("yfhgzue_goldmanberg_1409955397@tfbnw.net", "313762828806343", "Donna");
+            mockUsers[22] = registerMockUser("uahsolu_mcdonaldsen_1409955394@tfbnw.net", "292134777642112", "Richard");
+            mockUsers[23] = registerMockUser("hawmibi_wongsen_1409955393@tfbnw.net", "319200178262030", "Karen");
             setEncounteredUsers();
         }
     }
@@ -117,17 +130,6 @@ public class MetYou {
         if (user == null) {
             throw new OAuthRequestException("missing user");
         }
-
-
-//        ArrayList<Entity> entities = new ArrayList<Entity>();
-//        for (UserEncountered userEncountered : users.getUsers()) {
-//            Entity userEntity = new Entity("UserEncountered", KeyFactory.stringToKey(users.getKey()));
-//            userEntity.setProperty("time", userEncountered.getTimeEncountered());
-//            userEntity.setProperty("userId", userEncountered.getUserId());
-//            entities.add(userEntity);
-//        }
-//        datastore.put(entities);
-
     }
 
     @ApiMethod(
@@ -161,6 +163,7 @@ public class MetYou {
                 userEncountered.socialId = socialIdentity.getProviderId();
                 userEncountered.key = appUser.id;
                 usersBatch.addUser(userEncountered);
+                logger.info("new req: " + req.getBeginningDate() + " : " + encUser.lastSeen);
             } else {
                 if (offset == req.getOffset()) {
                     if (count == req.getCount()) {
@@ -180,13 +183,52 @@ public class MetYou {
                 }
             }
         }
-
         return usersBatch;
     }
 
 
     public List<AppUser> getRegisteredUsers() {
         return ofy().load().type(AppUser.class).list();
+    }
+
+    public void metMockUser(AppUser user) {
+        final EncounterInfo info = ofy().load()
+                .type(EncounterInfo.class)
+                .filter("users", Key.create(AppUser.class, user.id))
+                .first()
+                .now();
+
+        if (info == null) {
+            logger.info("no info " + user.id);
+            return;
+        }
+
+        ofy().transact(new VoidWork() {
+            @Override
+            public void vrun() {
+                Date date = new Date();
+                EncounterEvent encounter = new EncounterEvent(info, date);
+                info.lastSeen = date;
+                ofy().save().entity(info).now();
+                ofy().save().entity(encounter).now();
+            }
+        });
+    }
+
+    public UsersBatch getMetUsers(User user) {
+        UsersRequest usersRequest = new UsersRequest();
+        usersRequest.setBeginningDate(new Date());
+        usersRequest.setOffset(0);
+        usersRequest.setCount(23);
+        usersRequest.setUserKey(myKey.id);
+        try {
+            return getUsers(usersRequest, user);
+        } catch (OAuthRequestException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     static private AppUser registerMockUser(String email, String fbId, String name) {
@@ -202,9 +244,9 @@ public class MetYou {
 
     static private void setEncounteredUsers() {
         Calendar c = Calendar.getInstance();
-        int day = 15;
+        int day = 3;
 
-        for (int i = 0; i <= 11; i++) {
+        for (int i = 0; i <= 23; i++) {
             final int j = i;
             c.set(2014, 7, day);
             day++;
