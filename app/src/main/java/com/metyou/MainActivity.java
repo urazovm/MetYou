@@ -4,6 +4,7 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
@@ -12,6 +13,7 @@ import android.view.MenuItem;
 
 import com.astuetz.PagerSlidingTabStrip;
 
+import com.metyou.net.DiscoveryService;
 import com.metyou.net.NetServiceManager;
 import com.metyou.social.SocialProvider;
 
@@ -119,8 +121,11 @@ public class MainActivity extends Activity /*,
             Log.d(TAG, "Already signed in! User Id: " + SocialProvider.getId());
         }
         setActionBarTabs();
-        netServiceManager = new NetServiceManager(this);
-        netServiceManager.setServiceDiscoveryAlarm(this);
+
+        //check network in order to start service
+        sendBroadcast(new Intent(this, NetServiceManager.class));
+        //netServiceManager = new NetServiceManager(this);
+        //netServiceManager.setServiceDiscoveryAlarm(this);
     }
 
 

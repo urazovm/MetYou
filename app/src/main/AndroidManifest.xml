@@ -79,6 +79,11 @@
             android:name=".net.DiscoverService"
             android:exported="false" />
 
+        <service
+            android:name=".net.DiscoveryService"
+            android:exported="false"
+            />
+
         <receiver android:name=".net.AlarmReceiver" />
     </application>
 

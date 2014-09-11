@@ -45,13 +45,15 @@ public class NetServiceManager extends BroadcastReceiver {
             return;
 
         if (activeNetInfo.isConnected()) {
-            Log.d("Connection", "Connected");
-            registerServiceInBackground(context);
-            setServiceDiscoveryAlarm(context);
+            Log.d("Connection", "Connected - starting service DiscoveryService");
+            //registerServiceInBackground(context);
+            //setServiceDiscoveryAlarm(context);
+            context.startService(new Intent(context, DiscoveryService.class));
         }  else if (activeNetInfo.isConnectedOrConnecting()) {
             Log.d("Connection", "Connected or Connecting");
         } else {
-            cancelServiceDiscoveryAlarm(context);
+            //cancelServiceDiscoveryAlarm(context);
+            context.stopService(new Intent(context, DiscoveryService.class));
             Log.d("Connection", "Not Connected");
         }
     }
@@ -137,102 +139,6 @@ public class NetServiceManager extends BroadcastReceiver {
                 Log.d("Local Net Service", "unregistration failed - errorCode " + errorCode);
             }
         };
-    }
-
-    /*public void initializeDiscoveryListener() {
-
-        // Instantiate a new DiscoveryListener
-        mDiscoveryListener = new NsdManager.DiscoveryListener() {
-
-            //  Called as soon as service discovery begins.
-            @Override
-            public void onDiscoveryStarted(String regType) {
-                Log.d("Net Service Discovery", "Service discovery started");
-                discoveryStarted = true;
-            }
-
-            @Override
-            public void onServiceFound(NsdServiceInfo service) {
-                Log.d("Net Service Discovery", "Service discovery success " + service);
-                if (!service.getServiceType().equals(serviceType)) {
-                    Log.d("Net Service Discovery", "Unknown Service Type: " + service.getServiceType());
-                } else if (service.getServiceName().equals(serviceName + SocialProvider.getId())) {
-                    Log.d("Net Service Discovery", "Same machine: " + serviceName);
-                } else if (service.getServiceName().contains(serviceName)){
-                    //mNsdManager.resolveService(service, mResolveListener);
-                    Log.d(TAG, "discovered: " + service.getServiceName());
-
-                }
-            }
-
-            @Override
-            public void onServiceLost(NsdServiceInfo service) {
-                // When the network service is no longer available.
-                // Internal bookkeeping code goes here.
-                Log.e("Net Service Discovery", "service lost" + service);
-            }
-
-            @Override
-            public void onDiscoveryStopped(String serviceType) {
-                Log.i("Net Service Discovery", "Discovery stopped: " + serviceType);
-                discoveryStarted = false;
-            }
-
-            @Override
-            public void onStartDiscoveryFailed(String serviceType, int errorCode) {
-                Log.e("Net Service Discovery", "Discovery failed: Error code:" + errorCode);
-                discoveryStarted = false;
-                mNsdManager.stopServiceDiscovery(this);
-            }
-
-            @Override
-            public void onStopDiscoveryFailed(String serviceType, int errorCode) {
-                Log.e("Net Service Discovery", "Discovery failed: Error code:" + errorCode);
-                discoveryStarted = false;
-                mNsdManager.stopServiceDiscovery(this);
-            }
-        };
-    }*/
-
-    /*public void discoverServices() {
-        mNsdManager.discoverServices(
-                serviceType, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
-    }*/
-
-    /*public void initializeResolveListener() {
-        mResolveListener = new NsdManager.ResolveListener() {
-
-            @Override
-            public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
-                // Called when the resolve fails.  Use the error code to debug.
-                Log.e("Net Service Discovery", "Resolve failed" + errorCode);
-            }
-
-            @Override
-            public void onServiceResolved(NsdServiceInfo mServiceInfo) {
-                Log.e("Net Service Discovery", "Resolve Succeeded. " + mServiceInfo);
-
-                if (mServiceInfo.getServiceName().equals(serviceName + SocialProvider.getId())) {
-                    Log.d("Net Service Discovery", "Same IP.");
-                    return;
-                }
-
-                String localServiceName = mServiceInfo.getServiceName().substring(serviceName.length());
-                Message serviceResolvedMessage = uiHandler.obtainMessage(0, localServiceName);
-
-                serviceResolvedMessage.sendToTarget();
-                service = mServiceInfo;
-            }
-        };
-    }*/
-
-    public boolean wifiConnected(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager)
-                context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        if (activeNetInfo == null)
-            return false;
-        return activeNetInfo.isConnected();
     }
 
     public void tearDown() {

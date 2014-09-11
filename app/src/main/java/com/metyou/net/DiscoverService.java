@@ -44,8 +44,6 @@ public class DiscoverService extends IntentService {
         super("DiscoverService");
     }
 
-
-
     @Override
     protected void onHandleIntent(Intent intent) {
         serviceName = getApplicationContext().getString(R.string.instance_name);
