@@ -124,8 +124,6 @@ public class MainActivity extends Activity /*,
 
         //check network in order to start service
         sendBroadcast(new Intent(this, NetServiceManager.class));
-        //netServiceManager = new NetServiceManager(this);
-        //netServiceManager.setServiceDiscoveryAlarm(this);
     }
 
 

@@ -1,11 +1,16 @@
 package com.metyou.net;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
+import android.os.AsyncTask;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 
 import com.metyou.R;
@@ -16,20 +21,31 @@ import com.metyou.social.SocialProvider;
  */
 public class DiscoveryService extends Service {
 
+    private static final long ALARM_INTERVAL = 1000 * 60 * 15 * 2;
+    private static final long ALARM_DELAY = 0;
+    public final static String DISCOVER = "DISCOVER";
+
     private static final String TAG = "DiscoveryService";
     private String serviceName;
     private String serviceType;
     private NsdManager mNsdManager;
     private int port;
     private NsdManager.RegistrationListener mRegistrationListener;
+    private NsdManager.DiscoveryListener mDiscoveryListener;
+    private Handler handler;
+    private Runnable discoverRunnable;
 
     @Override
     public void onCreate() {
         super.onCreate();
+
         Log.d(TAG, "Service Created");
+
+        handler = new Handler(Looper.getMainLooper());
         serviceName = getApplicationContext().getString(R.string.instance_name);
         serviceType = getApplicationContext().getString(R.string.service_type);
         port = getResources().getInteger(R.integer.presence_port);
+        mNsdManager = (NsdManager) getApplicationContext().getSystemService(Context.NSD_SERVICE);
 
         mRegistrationListener = new NsdManager.RegistrationListener() {
 
@@ -53,7 +69,29 @@ public class DiscoveryService extends Service {
                 Log.d("Local Net Service", "unregistration failed - errorCode " + errorCode);
             }
         };
+
+        discoverRunnable = new Runnable() {
+            @Override
+            public void run() {
+                mNsdManager.stopServiceDiscovery(mDiscoveryListener);
+            }
+        };
+
         registerService();
+        setServiceDiscoveryAlarm(this);
+    }
+
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent == null) {
+            return START_STICKY;
+        }
+        if (intent.getAction() != null && intent.getAction().equals(DISCOVER)) {
+            discoverNetUsers();
+            Log.d(TAG, "discover peers");
+        }
+        return START_STICKY;
     }
 
     @Override
@@ -64,7 +102,9 @@ public class DiscoveryService extends Service {
     @Override
     public void onDestroy() {
         mNsdManager.unregisterService(mRegistrationListener);
+        cancelServiceDiscoveryAlarm(this);
         Log.d(TAG, "Service Stopped");
+        handler.removeCallbacks(discoverRunnable);
         super.onDestroy();
     }
 
@@ -74,8 +114,82 @@ public class DiscoveryService extends Service {
         serviceInfo.setServiceName(serviceName + SocialProvider.getId());
         serviceInfo.setServiceType(serviceType);
         serviceInfo.setPort(port);
-        mNsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
         mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, mRegistrationListener);
     }
 
+
+    public void setServiceDiscoveryAlarm(Context context) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), PendingIntent.FLAG_NO_CREATE);
+
+        if (alarmIntent == null) {
+            alarmIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), 0);
+            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, ALARM_DELAY, ALARM_INTERVAL, alarmIntent);
+            Log.d(TAG, "Alarm set!");
+        } else {
+            Log.d(TAG, "Alarm already set!");
+        }
+    }
+
+    public void cancelServiceDiscoveryAlarm(Context context) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), PendingIntent.FLAG_NO_CREATE);
+        if (alarmIntent != null) {
+            alarmManager.cancel(alarmIntent);
+            alarmIntent.cancel();
+            Log.d(TAG, "Alarm canceled!");
+        }
+    }
+
+    private void discoverNetUsers() {
+        mDiscoveryListener = new NsdManager.DiscoveryListener() {
+
+            //  Called as soon as service discovery begins.
+            @Override
+            public void onDiscoveryStarted(String regType) {
+                Log.d("Net Service Discovery", "Service discovery started");
+            }
+
+            @Override
+            public void onServiceFound(NsdServiceInfo service) {
+                Log.d("Net Service Discovery", "Service discovery success " + service);
+                if (!service.getServiceType().equals(serviceType)) {
+                    Log.d("Net Service Discovery", "Unknown Service Type: " + service.getServiceType());
+                } else if (service.getServiceName().equals(serviceName + SocialProvider.getId())) {
+                    Log.d("Net Service Discovery", "Same machine: " + serviceName);
+                } else if (service.getServiceName().contains(serviceName)) {
+                    //mNsdManager.resolveService(service, mResolveListener);
+                    Log.d("Net Service Discovery", "discovered: " + service.getServiceName());
+                }
+            }
+
+            @Override
+            public void onServiceLost(NsdServiceInfo service) {
+                // When the network service is no longer available.
+                // Internal bookkeeping code goes here.
+                Log.e("Net Service Discovery", "service lost" + service);
+            }
+
+            @Override
+            public void onDiscoveryStopped(String serviceType) {
+                Log.i("Net Service Discovery", "Discovery stopped: " + serviceType);
+            }
+
+            @Override
+            public void onStartDiscoveryFailed(String serviceType, int errorCode) {
+                Log.e("Net Service Discovery", "Discovery failed: Error code:" + errorCode);
+                mNsdManager.stopServiceDiscovery(this);
+            }
+
+            @Override
+            public void onStopDiscoveryFailed(String serviceType, int errorCode) {
+                Log.e("Net Service Discovery", "Discovery failed: Error code:" + errorCode);
+                mNsdManager.stopServiceDiscovery(this);
+            }
+        };
+
+        mNsdManager.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
+
+        handler.postDelayed(discoverRunnable, 5000);
+    }
 }
