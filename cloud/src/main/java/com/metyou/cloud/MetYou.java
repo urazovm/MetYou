@@ -5,6 +5,7 @@ import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.oauth.OAuthRequestException;
 import com.google.appengine.api.users.User;
 import com.googlecode.objectify.Key;
@@ -92,10 +93,7 @@ public class MetYou {
     @ApiMethod(
             name = "services.register",
             httpMethod = ApiMethod.HttpMethod.POST)
-    public CloudResponse registerUser(SocialIdentity socialIdentity, User user) {
-        if (user == null) {
-            return null;
-        }
+    public CloudResponse registerUser(SocialIdentity socialIdentity) {
 
         logger.info("provider id " + socialIdentity.getProviderId());
 
@@ -124,23 +122,25 @@ public class MetYou {
     @ApiMethod(
             name = "services.insertEncounteredUsers",
             httpMethod = ApiMethod.HttpMethod.POST)
-    public void insertUsersEncountered(UsersBatch users, User user) throws OAuthRequestException,
+    public void insertUsersEncountered(UsersBatch users) throws OAuthRequestException,
             IOException {
 
-        if (user == null) {
-            throw new OAuthRequestException("missing user");
+        for (UserEncountered usr : users.getUsers()) {
+            AppUser user1 = ofy().load().key(Key.create(AppUser.class, usr.key)).now();
+            AppUser user2 = ofy().load().key(Key.create(AppUser.class, users.getKey())).now();
+            EncounterInfo info = new EncounterInfo(user1, user2);
+            info.lastSeen = usr.date;
+            ofy().save().entity(info).now();
+            EncounterEvent encounter = new EncounterEvent(info, usr.date);
+            ofy().save().entity(encounter).now();
         }
     }
 
     @ApiMethod(
             name = "services.getUsers",
             httpMethod = ApiMethod.HttpMethod.POST)
-    public UsersBatch getUsers(UsersRequest req, User user) throws OAuthRequestException,
+    public UsersBatch getUsers(UsersRequest req) throws OAuthRequestException,
             IOException {
-
-        if (user == null) {
-            throw new OAuthRequestException("missing user");
-        }
 
         UsersBatch usersBatch = new UsersBatch();
         usersBatch.setReachedEnd(true);
@@ -215,14 +215,14 @@ public class MetYou {
         });
     }
 
-    public UsersBatch getMetUsers(User user) {
+    public UsersBatch getMetUsers() {
         UsersRequest usersRequest = new UsersRequest();
         usersRequest.setBeginningDate(new Date());
         usersRequest.setOffset(0);
         usersRequest.setCount(23);
         usersRequest.setUserKey(myKey.id);
         try {
-            return getUsers(usersRequest, user);
+            return getUsers(usersRequest);
         } catch (OAuthRequestException e) {
             e.printStackTrace();
         } catch (IOException e) {

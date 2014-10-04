@@ -9,7 +9,7 @@ import java.util.List;
 public class UsersBatch {
     private boolean reachedEnd;
     private List<UserEncountered> users = new ArrayList<UserEncountered>();
-    private String key;
+    private Long key;
 
     public List<UserEncountered> getUsers() {
         return users;
@@ -19,11 +19,11 @@ public class UsersBatch {
         users.add(user);
     }
 
-    public String getKey() {
+    public Long getKey() {
         return key;
     }
 
-    public void setKey(String key) {
+    public void setKey(Long key) {
         this.key = key;
     }
 

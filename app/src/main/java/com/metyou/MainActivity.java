@@ -16,6 +16,8 @@ import com.astuetz.PagerSlidingTabStrip;
 import com.metyou.net.DiscoveryService;
 import com.metyou.net.NetServiceManager;
 import com.metyou.social.SocialProvider;
+import com.metyou.util.ImageCache;
+import com.metyou.util.ImageFetcher;
 
 
 public class MainActivity extends Activity /*,
@@ -23,6 +25,7 @@ public class MainActivity extends Activity /*,
         GooglePlayServicesClient.OnConnectionFailedListener,
         LocationListener */{
     private static final String TAG = "MainActivity";
+    private static final String IMAGE_CACHE_DIR = "thumbs";
 
     private ViewPager viewPager;
     private AppPagerAdapter appPagerAdapter;
@@ -30,6 +33,7 @@ public class MainActivity extends Activity /*,
     private NetServiceManager netServiceManager;
     private AlarmManager alarmManager;
     private PendingIntent alarmIntent;
+    private ImageFetcher imageFetcher;
 
 
 //    private final static int
@@ -120,6 +124,13 @@ public class MainActivity extends Activity /*,
         if (SocialProvider.currentProvider() != SocialProvider.NONE) {
             Log.d(TAG, "Already signed in! User Id: " + SocialProvider.getId());
         }
+
+        ImageCache.ImageCacheParams cacheParams =
+                new ImageCache.ImageCacheParams(this, IMAGE_CACHE_DIR);
+        cacheParams.setMemCacheSizePercent(0.25f);
+        imageFetcher = new ImageFetcher(this, 60, 60);
+        imageFetcher.addImageCache(getFragmentManager(), cacheParams);
+
         setActionBarTabs();
 
         //check network in order to start service
@@ -128,7 +139,7 @@ public class MainActivity extends Activity /*,
 
 
     private void setActionBarTabs() {
-        appPagerAdapter = new AppPagerAdapter(getFragmentManager());
+        appPagerAdapter = new AppPagerAdapter(getFragmentManager(), imageFetcher);
         viewPager = (ViewPager)findViewById(R.id.pager);
         viewPager.setAdapter(appPagerAdapter);
         slidingTabs = (PagerSlidingTabStrip) findViewById(R.id.tabs);
@@ -163,18 +174,26 @@ public class MainActivity extends Activity /*,
                     .setText(appPagerAdapter.getPageTitle(i))
                     .setTabListener(tabListener));
         }
-
-        //slidingTabs.setOnPageChangeListener(pageChangeListener);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        imageFetcher.setExitTasksEarly(false);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        imageFetcher.setPauseWork(false);
+        imageFetcher.setExitTasksEarly(true);
+        imageFetcher.flushCache();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        imageFetcher.closeCache();
     }
 
     @Override
@@ -193,5 +212,9 @@ public class MainActivity extends Activity /*,
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public ImageFetcher getImageFetcher() {
+        return imageFetcher;
     }
 }

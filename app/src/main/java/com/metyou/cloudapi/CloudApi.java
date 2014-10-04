@@ -42,7 +42,7 @@ public class CloudApi {
 
     private Services getApiServiceHandle(@Nullable GoogleAccountCredential credential) {
         Services.Builder services = new Services.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential);
-        services.setRootUrl("http://192.168.1.104:8080/_ah/api/");
+        services.setRootUrl("http://192.168.1.106:8080/_ah/api/");
         return services.build();
     }
 

@@ -1,4 +1,4 @@
-package com.metyou.fragments.userlist;
+package com.metyou.fragments.friends;
 
 /**
  * Created by mihai on 8/20/14.

@@ -1,22 +1,9 @@
-package com.metyou.fragments.userlist;
+package com.metyou.fragments.friends;
 
-import android.content.Context;
 import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.util.Log;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
-import android.widget.ArrayAdapter;
-import android.widget.ListAdapter;
-
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
-import com.metyou.cloud.services.model.SocialIdentity;
-import com.metyou.cloudapi.CloudApi;
-import com.metyou.social.SocialProvider;
-import com.metyou.social.User;
-
-import java.util.ArrayList;
 
 /**
  * Created by mihai on 8/16/14.

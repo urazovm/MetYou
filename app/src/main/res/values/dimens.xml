@@ -3,4 +3,6 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="pagerview_height">48dp</dimen>
+    <dimen name="facebook_login_text_size">36dp</dimen>
+    <dimen name="user_settings_height">100dp</dimen>
 </resources>

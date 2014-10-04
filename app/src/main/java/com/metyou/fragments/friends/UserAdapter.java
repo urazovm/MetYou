@@ -1,7 +1,6 @@
-package com.metyou.fragments.userlist;
+package com.metyou.fragments.friends;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,18 +12,17 @@ import com.metyou.R;
 import com.metyou.util.ImageFetcher;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by mihai on 7/25/14.
  */
-public class UserListAdapter extends ArrayAdapter<ListRow> {
+public class UserAdapter extends ArrayAdapter<ListRow> {
 
     private static final String TAG = "USER_LIST_ADAPTER";
     private static final String IMAGE_CACHE_DIR = "thumbs";
     List<ListRow> users;
     private ImageFetcher imageFetcher;
-    public UserListAdapter(Context context, int resource, List<ListRow> objects, ImageFetcher imageFetcher) {
+    public UserAdapter(Context context, int resource, List<ListRow> objects, ImageFetcher imageFetcher) {
         super(context, resource, objects);
         this.users = objects;
         this.imageFetcher = imageFetcher;

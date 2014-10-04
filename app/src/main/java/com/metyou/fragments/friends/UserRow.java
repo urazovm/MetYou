@@ -1,15 +1,7 @@
-package com.metyou.fragments.userlist;
-
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
-import android.util.Log;
+package com.metyou.fragments.friends;
 
 import com.metyou.cloud.services.model.UserEncountered;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Date;
 
 /**

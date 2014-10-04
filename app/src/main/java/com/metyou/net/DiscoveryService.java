@@ -13,8 +13,18 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
 
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.util.DateTime;
 import com.metyou.R;
+import com.metyou.cloud.services.model.SocialIdentity;
+import com.metyou.cloud.services.model.UserEncountered;
+import com.metyou.cloud.services.model.UsersBatch;
+import com.metyou.cloudapi.CloudApi;
 import com.metyou.social.SocialProvider;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Created by mihai on 9/11/14.
@@ -34,19 +44,19 @@ public class DiscoveryService extends Service {
     private NsdManager.DiscoveryListener mDiscoveryListener;
     private Handler handler;
     private Runnable discoverRunnable;
+    private CloudApi cloudApi;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        cloudApi = CloudApi.getCloudApi(null);
 
         Log.d(TAG, "Service Created");
-
         handler = new Handler(Looper.getMainLooper());
         serviceName = getApplicationContext().getString(R.string.instance_name);
         serviceType = getApplicationContext().getString(R.string.service_type);
         port = getResources().getInteger(R.integer.presence_port);
         mNsdManager = (NsdManager) getApplicationContext().getSystemService(Context.NSD_SERVICE);
-
         mRegistrationListener = new NsdManager.RegistrationListener() {
 
             @Override
@@ -142,6 +152,8 @@ public class DiscoveryService extends Service {
     }
 
     private void discoverNetUsers() {
+        final List<UserEncountered> userEncounteredList = new ArrayList<UserEncountered>();
+
         mDiscoveryListener = new NsdManager.DiscoveryListener() {
 
             //  Called as soon as service discovery begins.
@@ -158,15 +170,17 @@ public class DiscoveryService extends Service {
                 } else if (service.getServiceName().equals(serviceName + SocialProvider.getId())) {
                     Log.d("Net Service Discovery", "Same machine: " + serviceName);
                 } else if (service.getServiceName().contains(serviceName)) {
-                    //mNsdManager.resolveService(service, mResolveListener);
                     Log.d("Net Service Discovery", "discovered: " + service.getServiceName());
+                    UserEncountered userEncountered = new UserEncountered();
+                    userEncountered.setSocialId(serviceToKey(service.getServiceName()));
+                    userEncountered.setDate(new DateTime(new Date()));
+                    userEncountered.setKey(SocialProvider.getId());
+                    userEncounteredList.add(userEncountered);
                 }
             }
 
             @Override
             public void onServiceLost(NsdServiceInfo service) {
-                // When the network service is no longer available.
-                // Internal bookkeeping code goes here.
                 Log.e("Net Service Discovery", "service lost" + service);
             }
 
@@ -185,11 +199,18 @@ public class DiscoveryService extends Service {
             public void onStopDiscoveryFailed(String serviceType, int errorCode) {
                 Log.e("Net Service Discovery", "Discovery failed: Error code:" + errorCode);
                 mNsdManager.stopServiceDiscovery(this);
+                UsersBatch usersBatch = new UsersBatch();
+                usersBatch.setUsers(userEncounteredList);
+                usersBatch.setKey(SocialProvider.getId());
+                cloudApi.insertEncounteredUsers(usersBatch, null);
             }
         };
 
         mNsdManager.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
-
         handler.postDelayed(discoverRunnable, 5000);
+    }
+
+    public String serviceToKey(String serviceName) {
+        return serviceName.substring(6);
     }
 }

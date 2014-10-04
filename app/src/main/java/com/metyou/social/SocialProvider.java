@@ -25,13 +25,25 @@ public abstract class SocialProvider {
     public static final String USER_ID = "USER_ID";
     private static final String PREFERENCES_FILE = "PREFS";
     private static final String FB_EMAIL = "FB_EMAIL";
+    private static final String FB_FIRST_NAME = "FB_FIRST_NAME";
+    private static final String FB_LAST_NAME = "FB_LAST_NAME";
 
     private static String facebookId;
     private static String email;
     private static Long id;
+    private static String userFirstName;
+    private static String userLastName;
 
     public static Long getId() {
         return id;
+    }
+
+    public static String getFirstName() {
+        return userFirstName;
+    }
+    
+    public static String getLastName() {
+        return userLastName;
     }
 
     public static void setEmail(String localEmail) {
@@ -55,6 +67,8 @@ public abstract class SocialProvider {
         facebookId = preferences.getString(FB_USER_ID, "-1");
         id = preferences.getLong(USER_ID, -1);
         email = preferences.getString(FB_EMAIL, "-1");
+        userFirstName = preferences.getString(FB_FIRST_NAME, "-1");
+        userLastName = preferences.getString(FB_LAST_NAME, "-1");
         Log.d(TAG, "prefs " + preferences.getAll().toString());
     }
 
@@ -108,6 +122,8 @@ public abstract class SocialProvider {
                 Context.MODE_PRIVATE).edit();
         preferences.putString(FB_USER_ID, user.getId());
         preferences.putString(FB_EMAIL, userEmail);
+        preferences.putString(FB_FIRST_NAME, user.getFirstName());
+        preferences.putString(FB_LAST_NAME, user.getLastName());
         preferences.commit();
         email = userEmail;
     }

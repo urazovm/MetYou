@@ -4,12 +4,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <com.metyou.fragments.settings.UserPreference/>
+
     <PreferenceCategory
         android:title="@string/settings_category">
-
         <com.metyou.fragments.settings.LogOutPreference
             android:title="@string/log_out"/>
-
     </PreferenceCategory>
 
 

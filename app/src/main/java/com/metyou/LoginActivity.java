@@ -73,15 +73,7 @@ public class LoginActivity extends Activity implements
 
     private void registerUser() {
         SocialIdentity socialIdentity = SocialProvider.getSocialIdentity();
-
-        GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(
-                LoginActivity.this, CloudApi.AUDIENCE);
-
-
-        Log.d(TAG, socialIdentity.getEmail());//todo set google account not facebook's
-        Log.d(TAG, Arrays.asList(AccountManager.get(this).getAccounts()).toString());
-        credential.setSelectedAccountName(socialIdentity.getEmail());
-        CloudApi cloudApi = CloudApi.getCloudApi(credential);
+        CloudApi cloudApi = CloudApi.getCloudApi(null);
         cloudApi.registerUser(socialIdentity, this);
     }
 
@@ -169,8 +161,8 @@ public class LoginActivity extends Activity implements
 
     @Override
     protected void onDestroy() {
-        uiLifecycleHelper.onDestroy();
         super.onDestroy();
+        uiLifecycleHelper.onDestroy();
     }
 
     @Override
@@ -195,7 +187,6 @@ public class LoginActivity extends Activity implements
             return true;
         } else if (id == R.id.list) {
             listAccount();
-
         }
         return super.onOptionsItemSelected(item);
     }
@@ -218,11 +209,6 @@ public class LoginActivity extends Activity implements
         SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
         editor.putString(KEY_LAST_PROVIDER, provider);
         editor.commit();
-    }
-
-    public void getProvider() {
-        SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
-        lastProvider = sharedPreferences.getString(KEY_LAST_PROVIDER, SocialProvider.NONE);
     }
 
     private void startMainActivity() {

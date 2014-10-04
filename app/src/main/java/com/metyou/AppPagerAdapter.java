@@ -2,12 +2,15 @@ package com.metyou;
 
 
 
+import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.os.Bundle;
 import android.support.v13.app.FragmentPagerAdapter;
 
-import com.metyou.fragments.userlist.BuddiesFragment;
+import com.metyou.fragments.friends.BuddiesFragment;
 import com.metyou.fragments.settings.SettingsFragment;
+import com.metyou.util.ImageFetcher;
 
 
 /**
@@ -22,10 +25,12 @@ public class AppPagerAdapter extends FragmentPagerAdapter {
     private static final int fragmentsNum = 2;
     private BuddiesFragment buddiesFragment;
     private SettingsFragment settingsFragment;
+    private ImageFetcher imageFetcher;
 
 
-    public AppPagerAdapter(FragmentManager fm) {
+    public AppPagerAdapter(FragmentManager fm, ImageFetcher imageFetcher) {
         super(fm);
+        this.imageFetcher = imageFetcher;
         buddiesFragment = new BuddiesFragment();
         settingsFragment = new SettingsFragment();
     }

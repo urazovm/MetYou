@@ -20,10 +20,6 @@ public class EncounterInfo {
     @Id
     Long id;
 
-//    @Load
-//    private
-//    ArrayList<Ref<Encounter>> encounters = new ArrayList<Ref<Encounter>>();
-
     @Load
     @Index
     private ArrayList<Ref<AppUser>> users = new ArrayList<Ref<AppUser>>();

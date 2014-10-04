@@ -1,4 +1,4 @@
-package com.metyou.fragments.userlist.refreshner;
+package com.metyou.fragments.friends.refresher;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -6,16 +6,13 @@ import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
-import android.support.v4.view.PagerAdapter;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.RotateAnimation;
 
 import com.facebook.rebound.Spring;
 import com.facebook.rebound.SpringConfig;
 import com.facebook.rebound.SpringListener;
 import com.facebook.rebound.SpringSystem;
-import com.facebook.rebound.SpringUtil;
 
 /**
  * Created by mihai on 8/27/14.

@@ -1,17 +1,20 @@
-package com.metyou.fragments.userlist;
+package com.metyou.fragments.friends;
 
 
 import android.app.Fragment;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ListView;
 
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.util.DateTime;
+import com.metyou.MainActivity;
 import com.metyou.R;
 import com.metyou.cloud.services.model.SocialIdentity;
 import com.metyou.cloud.services.model.UserEncountered;
@@ -19,7 +22,6 @@ import com.metyou.cloud.services.model.UsersBatch;
 import com.metyou.cloud.services.model.UsersRequest;
 import com.metyou.cloudapi.CloudApi;
 import com.metyou.cloudapi.GetUsersTask;
-import com.metyou.fragments.userlist.refreshner.SwipeRefreshLayout;
 import com.metyou.social.SocialProvider;
 import com.metyou.util.ImageCache;
 import com.metyou.util.ImageFetcher;
@@ -28,34 +30,27 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 
-public class BuddiesFragment extends Fragment implements EndlessScrollListener.EndlessScrollCallback,
-        GetUsersTask.GetUsersCallback {
+public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCallback,
+        EndlessScrollListener.EndlessScrollCallback {
 
     private static final String TAG = "BuddiesFragment";
-    private static final String IMAGE_CACHE_DIR = "thumbs";
     private static final int AMOUNT_TO_LOAD = 10;
     private ListView userListView;
-    private UserListAdapter arrayAdapter;
+    private UserAdapter arrayAdapter;
     private ArrayList<ListRow> userList;
     private static LoaderRow loaderRow = new LoaderRow();
-    private EndlessScrollListener endlessScrollListener;
     private boolean loaderSet = false;
-    private ImageFetcher imageFetcher;
 
     private SwipeRefreshLayout swipeRefreshLayout;
     private Date lastRefreshDate;
     private Comparator<ListRow> mComparator;
+    private ImageFetcher imageFetcher;
+    private EndlessScrollListener endlessScrollListener;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         userList = new ArrayList<ListRow>();
-
-        ImageCache.ImageCacheParams cacheParams =
-                new ImageCache.ImageCacheParams(getActivity(), IMAGE_CACHE_DIR);
-        cacheParams.setMemCacheSizePercent(0.25f);
-        imageFetcher = new ImageFetcher(getActivity(), 60, 60);
-        imageFetcher.addImageCache(getFragmentManager(), cacheParams);
 
         //sort data desc with respect to last seen date
         mComparator = new Comparator<ListRow>() {
@@ -72,8 +67,9 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
                 }
             }
         };
+        imageFetcher = ((MainActivity)getActivity()).getImageFetcher();
 
-        arrayAdapter = new UserListAdapter(getActivity(),
+        arrayAdapter = new UserAdapter(getActivity(),
                 android.R.layout.simple_list_item_1,
                 userList,
                 imageFetcher);
@@ -108,7 +104,6 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
     @Override
     public void onResume() {
         super.onResume();
-        imageFetcher.setExitTasksEarly(false);
         if (arrayAdapter.isEmpty()) {
             lastRefreshDate = new Date();
             UsersRequest usersRequest = new UsersRequest();
@@ -123,15 +118,11 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
     @Override
     public void onPause() {
         super.onPause();
-        imageFetcher.setPauseWork(false);
-        imageFetcher.setExitTasksEarly(true);
-        imageFetcher.flushCache();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        imageFetcher.closeCache();
     }
 
     @Override
@@ -191,9 +182,9 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
             });
         } else {
             if (arrayAdapter.getCount() > 0) {
-                swipeRefreshLayout.setActive(true);
+                //swipeRefreshLayout.setActive(true);
             } else {
-                swipeRefreshLayout.setActive(false);
+                //swipeRefreshLayout.setActive(false);
             }
             if (!reachedEnd && !loaderSet) {
                 loaderSet = true;
@@ -205,11 +196,7 @@ public class BuddiesFragment extends Fragment implements EndlessScrollListener.E
     }
 
     private void requestUsers(UsersRequest ur, GetUsersTask.RequestType type) {
-        SocialIdentity socialIdentity = SocialProvider.getSocialIdentity();
-        GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(
-                getActivity(), CloudApi.AUDIENCE);
-        credential.setSelectedAccountName(socialIdentity.getEmail());
-        CloudApi cloudApi = CloudApi.getCloudApi(credential);
+        CloudApi cloudApi = CloudApi.getCloudApi(null);
         cloudApi.getUsers(ur, type, this);
     }
 
