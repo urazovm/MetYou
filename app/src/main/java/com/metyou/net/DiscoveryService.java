@@ -11,6 +11,7 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
@@ -32,7 +33,7 @@ import java.util.List;
 public class DiscoveryService extends Service {
 
     private static final long ALARM_INTERVAL = 1000 * 60 * 15 * 2;
-    private static final long ALARM_DELAY = 0;
+    private static final long ALARM_DELAY = 1000 * 60;
     public final static String DISCOVER = "DISCOVER";
 
     private static final String TAG = "DiscoveryService";
@@ -134,7 +135,7 @@ public class DiscoveryService extends Service {
 
         if (alarmIntent == null) {
             alarmIntent = PendingIntent.getBroadcast(context, 0, new Intent(context, AlarmReceiver.class), 0);
-            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, ALARM_DELAY, ALARM_INTERVAL, alarmIntent);
+            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + ALARM_DELAY, ALARM_INTERVAL, alarmIntent);
             Log.d(TAG, "Alarm set!");
         } else {
             Log.d(TAG, "Alarm already set!");

@@ -71,7 +71,8 @@
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyDQs5ydz9lz8KUqapkg9XejpRAxHHRJftE" />
 
-        <receiver android:name=".net.NetServiceManager" >                                                          
+        <receiver android:name=".net.NetServiceManager"
+            android:enabled="false">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>

@@ -30,9 +30,6 @@ public class MainActivity extends Activity /*,
     private ViewPager viewPager;
     private AppPagerAdapter appPagerAdapter;
     private PagerSlidingTabStrip slidingTabs;
-    private NetServiceManager netServiceManager;
-    private AlarmManager alarmManager;
-    private PendingIntent alarmIntent;
     private ImageFetcher imageFetcher;
 
 

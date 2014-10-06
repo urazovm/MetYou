@@ -22,6 +22,7 @@ import com.metyou.cloud.services.model.UsersBatch;
 import com.metyou.cloud.services.model.UsersRequest;
 import com.metyou.cloudapi.CloudApi;
 import com.metyou.cloudapi.GetUsersTask;
+import com.metyou.fragments.friends.refresher.CustomSpinner;
 import com.metyou.social.SocialProvider;
 import com.metyou.util.ImageCache;
 import com.metyou.util.ImageFetcher;
@@ -82,6 +83,14 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
         View view = inflater.inflate(R.layout.buddies_fragment, container, false);
 
         swipeRefreshLayout = (SwipeRefreshLayout)view.findViewById(R.id.swipe_refresh);
+        swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_dark,
+                android.R.color.holo_green_dark,
+                android.R.color.holo_blue_dark,
+                android.R.color.holo_green_dark
+        );
+
+        swipeRefreshLayout.setEnabled(false);
+
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -182,9 +191,9 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
             });
         } else {
             if (arrayAdapter.getCount() > 0) {
-                //swipeRefreshLayout.setActive(true);
+                swipeRefreshLayout.setEnabled(true);
             } else {
-                //swipeRefreshLayout.setActive(false);
+
             }
             if (!reachedEnd && !loaderSet) {
                 loaderSet = true;

@@ -4,10 +4,12 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -34,6 +36,8 @@ import com.metyou.cloud.services.model.CloudResponse;
 import com.metyou.cloud.services.model.SocialIdentity;
 import com.metyou.cloudapi.CloudApi;
 import com.metyou.cloudapi.RegisterTask;
+import com.metyou.net.DiscoveryService;
+import com.metyou.net.NetServiceManager;
 import com.metyou.social.SocialProvider;
 
 import org.json.JSONArray;
@@ -64,6 +68,7 @@ public class LoginActivity extends Activity implements
         if (state == SessionState.OPENED) {
             Log.d(TAG, "facebook opened");
             saveProvider(SocialProvider.FACEBOOK);
+            loginButton.setEnabled(false);
             SocialProvider.fetchUserInfo(this);
         } else {
             Log.d(TAG, "facebook closed");
@@ -85,6 +90,7 @@ public class LoginActivity extends Activity implements
 
         if (SocialProvider.currentProvider() != SocialProvider.NONE) {
             if (getIntent().getAction().equals(LOG_OUT_ACTION)) {
+                stopService(new Intent(this, DiscoveryService.class));
                 logOut();
             } else {
                 //already signed in; set social data
@@ -129,9 +135,13 @@ public class LoginActivity extends Activity implements
     }
 
     private void logOut() {
-        Session.getActiveSession().closeAndClearTokenInformation();
+        if (Session.getActiveSession() != null) {
+            Session.getActiveSession().closeAndClearTokenInformation();
+        }
         Session.setActiveSession(null);
         SocialProvider.deletePreferences(this);
+        setNetworkChangeReceiver(false);
+        loginButton.setEnabled(true);
     }
 
     private void setFacebookPermissions() {
@@ -244,7 +254,15 @@ public class LoginActivity extends Activity implements
             editor.putLong(USER_ID, response.getId());
             editor.commit();
             SocialProvider.init(this);
+            setNetworkChangeReceiver(true);
             startMainActivity();
         }
+    }
+
+    private void setNetworkChangeReceiver(boolean set) {
+        ComponentName componentName = new ComponentName(this, NetServiceManager.class);
+        int flag = (set ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED:
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED);
+        getPackageManager().setComponentEnabledSetting(componentName, flag, PackageManager.DONT_KILL_APP);
     }
 }

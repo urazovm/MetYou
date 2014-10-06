@@ -6,6 +6,7 @@ import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
@@ -26,6 +27,11 @@ public class CustomSpinner extends View {
     public CustomSpinner(Context context) {
         super(context);
         autoRotate = false;
+    }
+
+    public CustomSpinner(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        autoRotate = true;
     }
 
     @Override
