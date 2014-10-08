@@ -87,6 +87,7 @@ public class LoginActivity extends Activity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login_activity);
+        loginButton = (LoginButton) findViewById(R.id.facebook_auth_button);
 
         if (SocialProvider.currentProvider() != SocialProvider.NONE) {
             if (getIntent().getAction().equals(LOG_OUT_ACTION)) {
@@ -105,8 +106,6 @@ public class LoginActivity extends Activity implements
                 }
             }
         }
-
-        loginButton = (LoginButton) findViewById(R.id.facebook_auth_button);
 
         loginButton.setOnErrorListener(new LoginButton.OnErrorListener() {
             @Override

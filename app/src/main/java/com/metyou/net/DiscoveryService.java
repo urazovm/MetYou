@@ -33,7 +33,7 @@ import java.util.List;
 public class DiscoveryService extends Service {
 
     private static final long ALARM_INTERVAL = 1000 * 60 * 15 * 2;
-    private static final long ALARM_DELAY = 1000 * 60;
+    private static final long ALARM_DELAY = 1000 * 30;
     public final static String DISCOVER = "DISCOVER";
 
     private static final String TAG = "DiscoveryService";
@@ -173,9 +173,8 @@ public class DiscoveryService extends Service {
                 } else if (service.getServiceName().contains(serviceName)) {
                     Log.d("Net Service Discovery", "discovered: " + service.getServiceName());
                     UserEncountered userEncountered = new UserEncountered();
-                    userEncountered.setSocialId(serviceToKey(service.getServiceName()));
                     userEncountered.setDate(new DateTime(new Date()));
-                    userEncountered.setKey(SocialProvider.getId());
+                    userEncountered.setKey(serviceToKey(service.getServiceName()));
                     userEncounteredList.add(userEncountered);
                 }
             }
@@ -188,6 +187,10 @@ public class DiscoveryService extends Service {
             @Override
             public void onDiscoveryStopped(String serviceType) {
                 Log.i("Net Service Discovery", "Discovery stopped: " + serviceType);
+                UsersBatch usersBatch = new UsersBatch();
+                usersBatch.setUsers(userEncounteredList);
+                usersBatch.setKey(SocialProvider.getId());
+                cloudApi.insertEncounteredUsers(usersBatch, null);
             }
 
             @Override
@@ -200,18 +203,14 @@ public class DiscoveryService extends Service {
             public void onStopDiscoveryFailed(String serviceType, int errorCode) {
                 Log.e("Net Service Discovery", "Discovery failed: Error code:" + errorCode);
                 mNsdManager.stopServiceDiscovery(this);
-                UsersBatch usersBatch = new UsersBatch();
-                usersBatch.setUsers(userEncounteredList);
-                usersBatch.setKey(SocialProvider.getId());
-                cloudApi.insertEncounteredUsers(usersBatch, null);
             }
         };
 
         mNsdManager.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
-        handler.postDelayed(discoverRunnable, 5000);
+        handler.postDelayed(discoverRunnable, 10000);
     }
 
-    public String serviceToKey(String serviceName) {
-        return serviceName.substring(6);
+    public Long serviceToKey(String serviceName) {
+        return Long.parseLong(serviceName.substring(6));
     }
 }

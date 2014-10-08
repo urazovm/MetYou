@@ -138,6 +138,7 @@ public abstract class SocialProvider {
         socialIdentity.setProviderId(facebookId);//TODO
         socialIdentity.setEmail(email);
         socialIdentity.setProvider(FACEBOOK);
+        socialIdentity.setFirstName(userFirstName);
         return socialIdentity;
     }
 }

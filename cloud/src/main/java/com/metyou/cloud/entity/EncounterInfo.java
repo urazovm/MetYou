@@ -37,16 +37,16 @@ public class EncounterInfo {
     }
 
     public Long getOtherUserId(Long id) {
-        if (users.get(0).get().id == id) {
-            return users.get(0).get().id;
+        if (users.get(0).get().id.equals(id)) {
+            return users.get(1).get().id;
         }
-        return users.get(1).get().id;
+        return users.get(0).get().id;
     }
 
     public AppUser getOtherAppUser(Long id) {
-        if (users.get(0).get().id == id) {
-            return users.get(0).get();
+        if (users.get(0).get().id.equals(id)) {
+            return users.get(1).get();
         }
-        return users.get(1).get();
+        return users.get(0).get();
     }
 }

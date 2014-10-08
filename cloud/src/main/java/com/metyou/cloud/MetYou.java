@@ -111,6 +111,7 @@ public class MetYou {
         logger.info("register email " + socialIdentity.getEmail());
 
         AppUser appUser = new AppUser();
+        appUser.firstName = socialIdentity.getFirstName();
         ofy().save().entity(appUser).now();
         socialIdentity.setUser(appUser);
         ofy().save().entity(socialIdentity).now();
@@ -126,9 +127,10 @@ public class MetYou {
             IOException {
 
         for (UserEncountered usr : users.getUsers()) {
+            logger.info("created Encounter event: " + usr.key + ":" + users.getKey());
             AppUser user1 = ofy().load().key(Key.create(AppUser.class, usr.key)).now();
             AppUser user2 = ofy().load().key(Key.create(AppUser.class, users.getKey())).now();
-            EncounterInfo info = new EncounterInfo(user1, user2);
+            EncounterInfo info = new EncounterInfo(user2, user1);
             info.lastSeen = usr.date;
             ofy().save().entity(info).now();
             EncounterEvent encounter = new EncounterEvent(info, usr.date);
@@ -154,8 +156,10 @@ public class MetYou {
         int offset = 0, count = 0;
         for (EncounterInfo encUser : users) {
             AppUser appUser = encUser.getOtherAppUser(req.getUserKey());
-            UserEncountered userEncountered = new UserEncountered(appUser.firstName, encUser.lastSeen);
-            if (encUser.lastSeen.compareTo(req.getBeginningDate()) > 0) {
+            UserEncountered userEncountered = new UserEncountered();
+            userEncountered.firstName = appUser.firstName;
+            userEncountered.date = encUser.lastSeen;
+            if (encUser.lastSeen.compareTo(req.getBeginningDate()) < 0) {
                 SocialIdentity socialIdentity = ofy().load().type(SocialIdentity.class)
                         .filter("user", Key.create(AppUser.class, encUser.getOtherUserId(req.getUserKey())))
                         .first().now();

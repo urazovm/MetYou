@@ -12,11 +12,4 @@ public class UserEncountered {
     public String firstName;
     public Date date;
     public Long key;
-
-
-    public UserEncountered(String firstName, Date date) {
-        this.firstName = firstName;
-        this.date = date;
-    }
-
 }
