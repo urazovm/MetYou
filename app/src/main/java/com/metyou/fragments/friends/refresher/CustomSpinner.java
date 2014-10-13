@@ -32,6 +32,7 @@ public class CustomSpinner extends View {
     public CustomSpinner(Context context, AttributeSet attrs) {
         super(context, attrs);
         autoRotate = true;
+
     }
 
     @Override
@@ -48,7 +49,9 @@ public class CustomSpinner extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        spinningArc = new SpinningArc(0, 0, w, h);
+        float centerX = w/2;
+        float centerY = h/2;
+        spinningArc = new SpinningArc(centerX - 125, centerY - 125, centerX + 125, centerY + 125);
     }
 
     public void setSpinningArcRotation(int rotation) {

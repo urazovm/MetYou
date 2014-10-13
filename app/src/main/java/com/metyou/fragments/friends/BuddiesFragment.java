@@ -106,6 +106,8 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
         });
         userListView = (ListView)view.findViewById(R.id.buddy_list);
         userListView.setOnScrollListener(endlessScrollListener);
+        CustomSpinner customSpinner = (CustomSpinner)view.findViewById(android.R.id.empty);
+        userListView.setEmptyView(customSpinner);
         userListView.setAdapter(arrayAdapter);
         return view;
     }

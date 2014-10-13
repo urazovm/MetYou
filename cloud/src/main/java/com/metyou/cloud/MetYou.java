@@ -50,7 +50,7 @@ public class MetYou {
     Logger logger = Logger.getLogger("services");
     static AppUser[] mockUsers;
 
-    static {
+    /*static {
         //check if users are stored
         mockUsers = new AppUser[100];
         SocialIdentity exists = ofy().load().type(SocialIdentity.class)
@@ -88,7 +88,7 @@ public class MetYou {
             mockUsers[23] = registerMockUser("hawmibi_wongsen_1409955393@tfbnw.net", "319200178262030", "Karen");
             setEncounteredUsers();
         }
-    }
+    }*/
 
     @ApiMethod(
             name = "services.register",
