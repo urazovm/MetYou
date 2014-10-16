@@ -10,14 +10,14 @@ import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-
-import com.astuetz.PagerSlidingTabStrip;
+import android.view.View;
 
 import com.metyou.net.DiscoveryService;
 import com.metyou.net.NetServiceManager;
 import com.metyou.social.SocialProvider;
 import com.metyou.util.ImageCache;
 import com.metyou.util.ImageFetcher;
+import com.metyou.util.pagerslidingtab.PagerSlidingTabStrip;
 
 
 public class MainActivity extends Activity /*,

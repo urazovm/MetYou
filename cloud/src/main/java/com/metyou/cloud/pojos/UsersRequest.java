@@ -13,6 +13,8 @@ public class UsersRequest {
     private int offset;
 
     public int year, month, day; //used by explorer
+    public String cursorStart;
+    public String cursorTop;
 
     public Date getBeginningDate() {
         if (beginningDate == null) {

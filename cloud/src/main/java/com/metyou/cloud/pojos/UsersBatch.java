@@ -10,6 +10,8 @@ public class UsersBatch {
     private boolean reachedEnd;
     private List<UserEncountered> users = new ArrayList<UserEncountered>();
     private Long key;
+    public String cursorStart;
+    public String cursorTop;
 
     public List<UserEncountered> getUsers() {
         return users;

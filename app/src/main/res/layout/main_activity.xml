@@ -4,10 +4,11 @@
     android:layout_height="match_parent"
     android:layout_width="match_parent">
 
-    <com.astuetz.PagerSlidingTabStrip
+    <com.metyou.util.pagerslidingtab.PagerSlidingTabStrip
         android:id="@+id/tabs"
         app:pstsShouldExpand="true"
         app:pstsIndicatorColor="@color/home"
+        app:pstsIndicatorHeight="4dp"
         android:layout_width="match_parent"
         android:background="@android:color/white"
         android:layout_height="@dimen/pagerview_height"/>
@@ -17,6 +18,6 @@
         android:id="@+id/pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/tabs"
+        android:layout_below="@id/tabs"
         />
 </RelativeLayout>

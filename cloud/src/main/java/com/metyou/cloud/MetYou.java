@@ -3,13 +3,14 @@ package com.metyou.cloud;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
+import com.google.appengine.api.datastore.Cursor;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.KeyFactory;
+import com.google.appengine.api.datastore.QueryResultIterator;
 import com.google.appengine.api.oauth.OAuthRequestException;
-import com.google.appengine.api.users.User;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.VoidWork;
+import com.googlecode.objectify.cmd.Query;
 import com.metyou.cloud.entity.AppUser;
 import com.metyou.cloud.entity.EncounterEvent;
 import com.metyou.cloud.entity.SocialIdentity;
@@ -20,14 +21,9 @@ import com.metyou.cloud.pojos.UsersRequest;
 
 import java.io.IOException;
 import java.util.Calendar;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.logging.Logger;
-
-import sun.rmi.runtime.Log;
 
 import static com.metyou.cloud.OfyService.ofy;
 
@@ -49,6 +45,7 @@ public class MetYou {
     static AppUser myKey;
     Logger logger = Logger.getLogger("services");
     static AppUser[] mockUsers;
+    static Integer limit = 10;
 
     /*static {
         //check if users are stored
@@ -130,10 +127,20 @@ public class MetYou {
             logger.info("created Encounter event: " + usr.key + ":" + users.getKey());
             AppUser user1 = ofy().load().key(Key.create(AppUser.class, usr.key)).now();
             AppUser user2 = ofy().load().key(Key.create(AppUser.class, users.getKey())).now();
-            EncounterInfo info = new EncounterInfo(user2, user1);
-            info.lastSeen = usr.date;
+            EncounterInfo info = ofy()
+                    .load()
+                    .type(EncounterInfo.class)
+                    .filter("users", Key.create(AppUser.class, usr.key))
+                    .filter("users", Key.create(AppUser.class, users.getKey()))
+                    .first().now();
+
+            if (info == null) {
+                info = new EncounterInfo(user2, user1);
+            }
+
+            info.lastSeen = new Date();
             ofy().save().entity(info).now();
-            EncounterEvent encounter = new EncounterEvent(info, usr.date);
+            EncounterEvent encounter = new EncounterEvent(info, info.lastSeen);
             ofy().save().entity(encounter).now();
         }
     }
@@ -144,49 +151,52 @@ public class MetYou {
     public UsersBatch getUsers(UsersRequest req) throws OAuthRequestException,
             IOException {
 
+        Boolean fromTop = true;
+        Query<EncounterInfo> query = ofy().load().type(EncounterInfo.class)
+                .filter("users", Key.create(AppUser.class, req.getUserKey()))
+                .order("-lastSeen")
+                .limit(limit);
+
         UsersBatch usersBatch = new UsersBatch();
         usersBatch.setReachedEnd(true);
 
-        List<EncounterInfo> users = ofy().load()
-                .type(EncounterInfo.class)
-                .filter("users", Key.create(AppUser.class, req.getUserKey()))
-                .order("-lastSeen")
-                .list();
+        if (req.cursorStart != null) {
+            query = query.startAt(Cursor.fromWebSafeString(req.cursorStart));
+            fromTop = false;
+        }
 
-        int offset = 0, count = 0;
-        for (EncounterInfo encUser : users) {
-            AppUser appUser = encUser.getOtherAppUser(req.getUserKey());
+        if (req.cursorTop != null) {
+            query = query.endAt(Cursor.fromWebSafeString(req.cursorTop));
+        }
+
+
+        QueryResultIterator<EncounterInfo>  iterator = query.iterator();
+        if (fromTop) {
+            usersBatch.cursorTop = iterator.getCursor().toWebSafeString();
+        }
+
+        while(iterator.hasNext()) {
+            EncounterInfo info = iterator.next();
+            AppUser appUser = info.getOtherAppUser(req.getUserKey());
             UserEncountered userEncountered = new UserEncountered();
             userEncountered.firstName = appUser.firstName;
-            userEncountered.date = encUser.lastSeen;
-            if (encUser.lastSeen.compareTo(req.getBeginningDate()) < 0) {
-                SocialIdentity socialIdentity = ofy().load().type(SocialIdentity.class)
-                        .filter("user", Key.create(AppUser.class, encUser.getOtherUserId(req.getUserKey())))
-                        .first().now();
+            userEncountered.date = info.lastSeen;
 
-                userEncountered.socialId = socialIdentity.getProviderId();
-                userEncountered.key = appUser.id;
-                usersBatch.addUser(userEncountered);
-                logger.info("new req: " + req.getBeginningDate() + " : " + encUser.lastSeen);
-            } else {
-                if (offset == req.getOffset()) {
-                    if (count == req.getCount()) {
-                        usersBatch.setReachedEnd(false);
-                        break;
-                    } else {
-                        SocialIdentity socialIdentity = ofy().load().type(SocialIdentity.class)
-                                .filter("user", Key.create(AppUser.class, encUser.getOtherUserId(req.getUserKey())))
-                                .first().now();
-                        userEncountered.socialId = socialIdentity.getProviderId();
-                        userEncountered.key = appUser.id;
-                        usersBatch.addUser(userEncountered);
-                        count++;
-                    }
-                } else {
-                    offset++;
-                }
-            }
+            SocialIdentity socialIdentity = ofy().load().type(SocialIdentity.class)
+                    .filter("user", Key.create(AppUser.class, info.getOtherUserId(req.getUserKey())))
+                    .first().now();
+
+            userEncountered.socialId = socialIdentity.getProviderId();
+            userEncountered.key = appUser.id;
+            usersBatch.addUser(userEncountered);
         }
+        if (usersBatch.getUsers().size() == req.getCount()) {
+            usersBatch.setReachedEnd(false);
+        }
+        Cursor cursor = iterator.getCursor();
+        usersBatch.cursorStart = cursor.toWebSafeString();
+
+
         return usersBatch;
     }
 

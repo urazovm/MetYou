@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Nearby</string>
+    <string name="app_name">Hey</string>
     <string name="action_settings">Settings</string>
     <string name="service_type">_presence._tcp.</string>
     <string name="instance_name">metyou</string>
 
     <integer name="presence_port">5298</integer>
 
-    <string name="main_activity">Nearby</string>
+    <string name="main_activity">hey</string>
     <string name="facebook_app_id">268968299975258</string>
     <string name="refresh">Refresh</string>
-    <string name="title_activity_login">LoginActivity</string>
-    <string name="name">Nearby</string>
+    <string name="title_activity_login">hey</string>
+    <string name="name">hey</string>
 
     <!-- Preferences -->
     <string name="settings_category">Settings</string>
     <string name="log_out">Log out</string>
     <string name="log_out_message">Log out now?</string>
+    <string name="empty_message">Hmm, no buddies yet.\nYou should go out more often.</string>
 
 </resources>

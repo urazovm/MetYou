@@ -9,8 +9,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.util.DateTime;
@@ -47,6 +49,11 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
     private Comparator<ListRow> mComparator;
     private ImageFetcher imageFetcher;
     private EndlessScrollListener endlessScrollListener;
+    private Button refreshButton;
+    private CustomSpinner customSpinner;
+    private TextView emptyText;
+    private String cursorStart;
+    private String cursorTop;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -99,6 +106,7 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
                 UsersRequest usersRequest = new UsersRequest();
                 usersRequest.setUserKey(SocialProvider.getId());
                 usersRequest.setBeginningDate(new DateTime(lastRefreshDate));
+                usersRequest.setCursorTop(cursorTop);
                 usersRequest.setCount(0);
                 usersRequest.setOffset(0);
                 requestUsers(usersRequest, GetUsersTask.RequestType.REFRESH);
@@ -106,8 +114,18 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
         });
         userListView = (ListView)view.findViewById(R.id.buddy_list);
         userListView.setOnScrollListener(endlessScrollListener);
-        CustomSpinner customSpinner = (CustomSpinner)view.findViewById(android.R.id.empty);
-        userListView.setEmptyView(customSpinner);
+        View emptyView = view.findViewById(android.R.id.empty);
+        refreshButton = (Button)emptyView.findViewById(R.id.refresh_btn);
+        refreshButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                refresh();
+            }
+        });
+        customSpinner = (CustomSpinner) emptyView.findViewById(R.id.spinner);
+        emptyText = (TextView) emptyView.findViewById(R.id.empty_text);
+
+        userListView.setEmptyView(emptyView);
         userListView.setAdapter(arrayAdapter);
         return view;
     }
@@ -116,13 +134,7 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
     public void onResume() {
         super.onResume();
         if (arrayAdapter.isEmpty()) {
-            lastRefreshDate = new Date();
-            UsersRequest usersRequest = new UsersRequest();
-            usersRequest.setUserKey(SocialProvider.getId());
-            usersRequest.setBeginningDate(new DateTime(lastRefreshDate));
-            usersRequest.setCount(AMOUNT_TO_LOAD);
-            usersRequest.setOffset(0);
-            requestUsers(usersRequest, GetUsersTask.RequestType.EMPTY);
+            refresh();
         }
     }
 
@@ -144,6 +156,7 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
         usersRequest.setBeginningDate(new DateTime(lastRefreshDate));
         usersRequest.setCount(AMOUNT_TO_LOAD);
         usersRequest.setOffset(arrayAdapter.getCount() - 2); //count the load row
+        usersRequest.setCursorStart(cursorStart);
         requestUsers(usersRequest, GetUsersTask.RequestType.MORE);
     }
 
@@ -169,6 +182,10 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
         handleRequestType(reqType, usersBatch.getReachedEnd());
         arrayAdapter.sort(mComparator);
         arrayAdapter.notifyDataSetChanged();
+        if (usersBatch.getCursorTop() != null) {
+            cursorTop = usersBatch.getCursorTop();
+        }
+        cursorStart = usersBatch.getCursorStart();
     }
 
     private void handleRequestType(GetUsersTask.RequestType reqType, boolean reachedEnd) {
@@ -195,7 +212,9 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
             if (arrayAdapter.getCount() > 0) {
                 swipeRefreshLayout.setEnabled(true);
             } else {
-
+                customSpinner.setVisibility(View.INVISIBLE);
+                refreshButton.setVisibility(View.VISIBLE);
+                emptyText.setVisibility(View.VISIBLE);
             }
             if (!reachedEnd && !loaderSet) {
                 loaderSet = true;
@@ -204,6 +223,19 @@ public class BuddiesFragment extends Fragment implements GetUsersTask.GetUsersCa
                 endlessScrollListener.performTaskOnBottom(false);
             }
         }
+    }
+
+    public void refresh() {
+        lastRefreshDate = new Date();
+        UsersRequest usersRequest = new UsersRequest();
+        usersRequest.setUserKey(SocialProvider.getId());
+        usersRequest.setBeginningDate(new DateTime(lastRefreshDate));
+        usersRequest.setCount(AMOUNT_TO_LOAD);
+        usersRequest.setOffset(0);
+        requestUsers(usersRequest, GetUsersTask.RequestType.EMPTY);
+        refreshButton.setVisibility(View.INVISIBLE);
+        customSpinner.setVisibility(View.VISIBLE);
+        emptyText.setVisibility(View.INVISIBLE);
     }
 
     private void requestUsers(UsersRequest ur, GetUsersTask.RequestType type) {

@@ -16,20 +16,43 @@
 
     </android.support.v4.widget.SwipeRefreshLayout>
 
-    <!--<TextView
-        android:id="@android:id/empty"
-        android:layout_height="match_parent"
-        android:layout_width="match_parent"
-        android:text="No people around">
-
-
-    </TextView> -->
-    <com.metyou.fragments.friends.refresher.CustomSpinner
+    <RelativeLayout
         android:layout_height="match_parent"
         android:layout_width="match_parent"
         android:id="@android:id/empty">
 
-    </com.metyou.fragments.friends.refresher.CustomSpinner>
+        <com.metyou.fragments.friends.refresher.CustomSpinner
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:id="@+id/spinner">
+
+        </com.metyou.fragments.friends.refresher.CustomSpinner>
+        <Button
+            android:id="@+id/refresh_btn"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="102dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/refresh_button"
+            android:visibility="invisible"
+            android:textColor="@android:color/white"
+            android:onClick="refresh"
+            android:text="Refresh"/>
+
+        <TextView
+            android:id="@+id/empty_text"
+            android:textColor="@color/home"
+            android:visibility="invisible"
+            android:textSize="26dp"
+            android:gravity="center"
+            android:layout_width="300dp"
+            android:layout_height="100dp"
+            android:text="@string/empty_message"
+            android:layout_above="@+id/refresh_btn"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="115dp" />
+    </RelativeLayout>
 
 
 </RelativeLayout>

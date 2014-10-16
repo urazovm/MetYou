@@ -173,7 +173,6 @@ public class DiscoveryService extends Service {
                 } else if (service.getServiceName().contains(serviceName)) {
                     Log.d("Net Service Discovery", "discovered: " + service.getServiceName());
                     UserEncountered userEncountered = new UserEncountered();
-                    userEncountered.setDate(new DateTime(new Date()));
                     userEncountered.setKey(serviceToKey(service.getServiceName()));
                     userEncounteredList.add(userEncountered);
                 }

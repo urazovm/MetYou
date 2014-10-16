@@ -4,9 +4,9 @@
     <version>2</version>
     <threadsafe>true</threadsafe>
 
-    <env-variables>
+    <!--<env-variables>
         <env-var name="CDBG_ENABLE" value="1" />
-    </env-variables>
+    </env-variables>-->
     <system-properties>
         <property name="java.util.logging.config.file" value="WEB-INF/logging.properties"/>
 
