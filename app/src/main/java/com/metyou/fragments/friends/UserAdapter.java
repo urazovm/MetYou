@@ -1,6 +1,7 @@
 package com.metyou.fragments.friends;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.metyou.R;
+import com.metyou.UserPhotos;
 import com.metyou.util.ImageFetcher;
 
 import java.util.List;
@@ -33,11 +35,24 @@ public class UserAdapter extends ArrayAdapter<ListRow> {
         LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View rowView;
         if (users.get(position) instanceof UserRow) {
-            UserRow userRow = (UserRow) users.get(position);
+            final UserRow userRow = (UserRow) users.get(position);
             rowView = inflater.inflate(R.layout.user_row, parent, false);
             ImageView photo = (ImageView) rowView.findViewById(R.id.user_photo);
-            TextView name = (TextView) rowView.findViewById(R.id.user_name);
+            photo.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getContext(), UserPhotos.class);
+                    intent.putExtra("socialId", userRow.getSocialId());
+                    intent.putExtra("firstName", userRow.getFirstName());
+                    getContext().startActivity(intent);
+                }
+            });
+            View rightSide = rowView.findViewById(R.id.user_right_side);
+
+            TextView name = (TextView) rightSide.findViewById(R.id.user_name);
+            TextView lastSeen = (TextView) rightSide.findViewById(R.id.last_seen);
             name.setText(userRow.getFirstName());
+            lastSeen.setText(userRow.getLastSeenHumanReadable());
             imageFetcher.loadProfileFBImage(userRow.getSocialId(), photo);
         } else {
             rowView = inflater.inflate(R.layout.loading_layout, parent, false);

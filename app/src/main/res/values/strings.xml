@@ -19,5 +19,7 @@
     <string name="log_out">Log out</string>
     <string name="log_out_message">Log out now?</string>
     <string name="empty_message">Hmm, no buddies yet.\nYou should go out more often.</string>
+    <string name="title_activity_user_photos">UserPhotos</string>
+    <string name="hello_world">Hello world!</string>
 
 </resources>
