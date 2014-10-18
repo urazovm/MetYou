@@ -123,10 +123,15 @@ public class MetYou {
     public void insertUsersEncountered(UsersBatch users) throws OAuthRequestException,
             IOException {
 
+        AppUser user2 = ofy().load().key(Key.create(AppUser.class, users.getKey())).now();
+
         for (UserEncountered usr : users.getUsers()) {
             logger.info("created Encounter event: " + usr.key + ":" + users.getKey());
             AppUser user1 = ofy().load().key(Key.create(AppUser.class, usr.key)).now();
-            AppUser user2 = ofy().load().key(Key.create(AppUser.class, users.getKey())).now();
+            if (user1 == null) {
+                continue;
+            }
+
             EncounterInfo info = ofy()
                     .load()
                     .type(EncounterInfo.class)

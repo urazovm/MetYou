@@ -33,7 +33,7 @@ import java.util.List;
 public class DiscoveryService extends Service {
 
     private static final long ALARM_INTERVAL = 1000 * 60 * 15 * 2;
-    private static final long ALARM_DELAY = 1000 * 30;
+    private static final long ALARM_DELAY = 1000 * 15;
     public final static String DISCOVER = "DISCOVER";
 
     private static final String TAG = "DiscoveryService";

@@ -22,4 +22,7 @@
     <string name="title_activity_user_photos">UserPhotos</string>
     <string name="hello_world">Hello world!</string>
 
+    <!-- photos activity-->
+    <string name="no_photos">No photos</string>
+
 </resources>

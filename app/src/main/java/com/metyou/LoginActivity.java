@@ -145,7 +145,7 @@ public class LoginActivity extends Activity implements
 
     private void setFacebookPermissions() {
         LoginButton fbLoginButton = (LoginButton) findViewById(R.id.facebook_auth_button);
-        fbLoginButton.setReadPermissions("email");
+        fbLoginButton.setReadPermissions("email", "user_photos");
     }
 
 
